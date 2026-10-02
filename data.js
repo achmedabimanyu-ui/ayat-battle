@@ -122,14 +122,22 @@ window.JUZ_START = [[1, 1], [2, 142], [2, 253], [3, 93], [4, 24], [4, 148], [5, 
 window.MODES = [
   { id:"susun",    icon:"i-build", name:"Susun ayat",     desc:"Susun potongan ayat yang diacak" },
   { id:"sambung",  icon:"i-link",  name:"Sambung ayat",   desc:"Pilih lanjutan dari awal ayat" },
-  { id:"lanjutkan",icon:"i-next",  name:"Lanjutkan ayat", desc:"Pilih ayat sesudahnya" }
+  { id:"lanjutkan",icon:"i-next",  name:"Lanjutkan ayat", desc:"Pilih ayat sesudahnya" },
+  { id:"tebak",    icon:"i-quiz",  name:"Tebak surat",    desc:"Tebak surat dari ayatnya" }
 ];
 
 window.CONTROLS = [
   { id:"pinch", icon:"i-pinch", name:"Jepit",  desc:"Pakai kamera, jepit dan seret" },
   { id:"shoot", icon:"i-aim",   name:"Tembak", desc:"Pakai kamera, bidik dan tembak" },
-  { id:"touch", icon:"i-tap",   name:"Sentuh", desc:"Tanpa kamera, ketuk kartu" }
+  { id:"touch", icon:"i-tap",   name:"Sentuh", desc:"Tanpa kamera, ketuk kartu" },
+  { id:"voice", icon:"i-mic",   name:"Suara",  desc:"Jawab dengan membaca ayat" }
 ];
+
+window.LEVELS = {
+  easy:   { name:"Mudah",  desc:"2 pilihan, potongan besar, ayat dibacakan" },
+  medium: { name:"Sedang", desc:"3 pilihan, ayat dibacakan" },
+  hard:   { name:"Sulit",  desc:"4 pilihan mirip (mutasyabihat), ada kartu jebakan, tanpa audio otomatis" }
+};
 
 // Folder audio per ayat di everyayah.com
 window.QARIS = [

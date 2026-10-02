@@ -259,3 +259,19 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .next-btn.ready{background:var(--moss);box-shadow:0 4px 0 var(--moss-d);animation:nudge 1s ease-in-out infinite}
 .next-btn:active{transform:translateY(4px);box-shadow:none}
 @keyframes nudge{50%{transform:translateX(3px)}}
+
+/* 4 PILIHAN, LEVEL, SUARA */
+.options{grid-template-columns:repeat(2,1fr)}
+.field-note{font-weight:500;font-size:13px;opacity:.75}
+.card.latin,.slot.latin{font-family:var(--font-ui);direction:ltr;line-height:1.3;padding-top:10px;padding-bottom:12px}
+.voice-bar{position:absolute;left:50%;translate:-50% 0;bottom:calc(env(safe-area-inset-bottom,0px) + 64px);z-index:6;display:flex;align-items:center;gap:12px;
+  width:min(560px,92%);padding:10px 14px;background:rgba(43,26,12,.85);border:3px solid var(--ink);border-radius:18px;color:var(--cream)}
+.voice-bar .mic{flex:none;width:58px;height:58px;display:grid;place-items:center;border-radius:50%;background:var(--stone);color:var(--ink);border:3px solid var(--ink)}
+.voice-bar .mic svg{width:30px;height:30px}
+.voice-bar.listening .mic{background:var(--red);color:var(--cream);animation:pulse 1.2s ease-in-out infinite}
+.voice-bar.hold .mic{background:var(--gold)}
+@keyframes pulse{50%{box-shadow:0 0 0 10px rgba(182,64,44,.25)}}
+.vtext{display:grid;min-width:0}
+.vtext small{font-weight:700;font-size:14px}
+.vtext p{font-family:var(--font-ar);font-size:22px;line-height:1.5;min-height:1.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.voice-bar.shake{animation:shake .35s}

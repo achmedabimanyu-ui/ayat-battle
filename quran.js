@@ -65,5 +65,27 @@ window.Quran = (() => {
   const pad = n => String(n).padStart(3, "0");
   const audioUrl = (qari, s, a) => `https://everyayah.com/data/${qari}/${pad(s)}${pad(a)}.mp3`;
 
-  return { load, words, audioUrl };
+  // ---- pembanding teks (untuk mutasyabihat dan jawaban suara) ----
+  const norm = t => (t || "")
+    .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "")
+    .replace(/[\u0671\u0623\u0625\u0622]/g, "\u0627").replace(/\u0649/g, "\u064A").replace(/\u0629/g, "\u0647")
+    .replace(/\u0624/g, "\u0648").replace(/\u0626/g, "\u064A")
+    .replace(/[^\u0621-\u064A\s]/g, "").replace(/\s+/g, " ").trim();
+  function grams(s){
+    s = s.replace(/\s+/g, ""); const m = new Map();
+    for (let i = 0; i < s.length - 1; i++){ const g = s.slice(i, i + 2); m.set(g, (m.get(g) || 0) + 1); }
+    return m;
+  }
+  function overlap(a, b){ let n = 0; a.forEach((c, g) => { n += Math.min(c, b.get(g) || 0); }); return n; }
+  const size = m => [...m.values()].reduce((x, y) => x + y, 0);
+  // kemiripan dua teks yang sudah dinormalisasi (0..1)
+  function sim(a, b){ const A = grams(a), B = grams(b), t = size(A) + size(B); return t ? 2 * overlap(A, B) / t : 0; }
+  // seberapa banyak teks target yang ikut terucap (0..1)
+  function recall(target, heard){ const T = grams(target), t = size(T); return t ? overlap(T, grams(heard)) / t : 0; }
+  // nama surat latin, mis. "surat al ikhlas" ~ "Al-Ikhlas"
+  const latin = t => (t || "").toLowerCase().replace(/surah|surat/g, "").replace(/[^a-z]/g, "")
+    .replace(/^(al|an|as|at|ar|az|ad|asy|adz)/, "").replace(/sy/g, "s").replace(/kh/g, "k").replace(/ts|th/g, "s");
+  const simLatin = (a, b) => { const x = latin(a), y = latin(b); if (!x || !y) return 0; if (x === y || x.includes(y)) return 1; return sim(x, y); };
+
+  return { load, words, audioUrl, norm, sim, recall, simLatin };
 })();

@@ -3,7 +3,7 @@
   const $$ = s => [...document.querySelectorAll(s)];
 
   // ---------- STATE (tersimpan di browser) ----------
-  const defaults = { name:"", qari:"Husary_128kbps", time:"30", rounds:"10", sound:true,
+  const defaults = { name:"", qari:"Husary_128kbps", time:"30", rounds:"10", sound:true, level:"easy",
                      surahs:[112,113,114], mode:"susun", control:"touch", play:"solo" };
   let S = { ...defaults };
   try { S = { ...defaults, ...JSON.parse(localStorage.getItem("ayatBattle") || "{}") }; } catch(e){}
@@ -108,13 +108,15 @@
   function validate(){
     let msg = "";
     if (!pick().list.length) msg = S.pickBy === "juz" ? "Pilih minimal satu juz." : "Pilih minimal satu surat.";
+    else if (S.control === "voice" && S.play === "duel-local") msg = "Jawab dengan suara hanya untuk main sendiri atau duel online, karena satu mikrofon tidak bisa membedakan dua pemain.";
+    else if (S.control === "voice" && !Voice.supported) msg = "Jawab dengan suara butuh Google Chrome di laptop atau HP Android.";
     $("#startHint").textContent = msg;
     $("#btnStart").disabled = !!msg;
   }
 
   const gameOpts = () => ({
     control:S.control, play:S.play, name:S.name, mode:S.mode, qari:S.qari, sound:S.sound,
-    time:S.time, rounds:S.rounds, pick:pick(),
+    time:S.time, rounds:S.rounds, pick:pick(), level:S.level,
     names:Object.fromEntries(SURAHS.map(s => [s.no, s.name])),
     onExit:() => go("home")
   });
@@ -182,7 +184,7 @@
     try {
       const o = gameOpts();
       const verses = await Quran.load(o.pick);
-      const questions = Questions.build(o.mode, verses, +o.rounds, o.names);
+      const questions = Questions.build(o.mode, verses, +o.rounds, o.names, o.level);
       if (!questions.length) throw new Error();
       const payload = { questions, mode:o.mode, time:o.time, startAt:Date.now() + 3500 };
       await Online.start(payload);
@@ -214,15 +216,18 @@
   $$("[data-open='settings']").forEach(b => b.onclick = () => {
     $("#setName").value = S.name; $("#setQari").value = S.qari;
     $("#setTime").value = S.time; $("#setRounds").value = S.rounds;
+    $("#setLevel").value = S.level; levelNote();
     modal.hidden = false; $("#setName").focus();
   });
   const close = () => { modal.hidden = true; };
+  const levelNote = () => { $("#levelNote").textContent = LEVELS[$("#setLevel").value].desc; };
+  $("#setLevel").onchange = levelNote;
   modal.querySelector("[data-close]").onclick = close;
   modal.addEventListener("click", e => { if (e.target === modal) close(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) close(); });
   $("#saveSettings").onclick = () => {
     S.name = $("#setName").value.trim(); S.qari = $("#setQari").value;
-    S.time = $("#setTime").value; S.rounds = $("#setRounds").value;
+    S.time = $("#setTime").value; S.rounds = $("#setRounds").value; S.level = $("#setLevel").value;
     save(); close();
   };
 

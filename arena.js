@@ -8,12 +8,16 @@ window.Arena = (() => {
 
   let opt, qs = [], boards = [], ghost = null, raf = 0, ctx, W, H, alive = false, touch = {};
   const audio = new Audio();
+  const voiceMode = () => opt.control === "voice";
   function play(ref){
     try {
       if (!ref || !opt.sound) return;
-      audio.pause(); audio.src = Quran.audioUrl(opt.qari, ref[0], ref[1]); audio.play().catch(() => {});
+      audio.pause(); audio.src = Quran.audioUrl(opt.qari, ref[0], ref[1]);
+      if (voiceMode() && Voice.active) Voice.hold(true);
+      audio.play().catch(() => { if (voiceMode()) Voice.hold(false); });
     } catch(e){}
   }
+  audio.onended = audio.onerror = () => { if (opt && voiceMode() && Voice.active) setTimeout(() => Voice.hold(false), 250); };
   const safely = fn => { try { fn(); } catch(e){ console.warn(e); } };
 
   // =================== PAPAN ===================
@@ -44,6 +48,13 @@ window.Arena = (() => {
       this.slotWrap = el("div", "slots", this.stage); this.slotWrap.dir = "rtl";
       this.layer = el("div", "layer", this.root);
       this.wait = null;
+      if (!ghost && voiceMode()){
+        this.vbar = el("div", "voice-bar", this.root);
+        this.vMic = el("div", "mic", this.vbar); this.vMic.innerHTML = '<svg viewBox="0 0 48 48"><use href="#i-mic"/></svg>';
+        const tx = el("div", "vtext", this.vbar);
+        this.vState = el("small", "", tx, "Menyiapkan mikrofon");
+        this.vHeard = el("p", "", tx, ""); this.vHeard.dir = "auto";
+      }
     }
     layout(x, w){
       Object.assign(this, { x, w, h:H });
@@ -74,8 +85,9 @@ window.Arena = (() => {
       });
       const top = this.top();
       this.cards = q.cards.map(t => {
-        const e = el("div", "card" + (this.ghost ? " ghost-card" : ""), this.layer, t);
-        e.style.fontSize = Math.round(fontFor(t) * this.scale) + "px";
+        const e = el("div", "card" + (this.ghost ? " ghost-card" : "") + (q.latin ? " latin" : ""), this.layer, t);
+        e.style.fontSize = Math.round((q.latin ? 24 : fontFor(t)) * this.scale) + "px";
+        if (voiceMode() && !q.latin && !this.ghost) e.hidden = true;   // mode suara: jawab dengan membaca
         const c = { el:e, value:t, held:null, done:false, w:e.offsetWidth, h:e.offsetHeight };
         c.x = 8 + Math.random() * Math.max(1, this.w - c.w - 16);
         c.y = top + Math.random() * Math.max(1, H - top - c.h - 16);
@@ -85,7 +97,12 @@ window.Arena = (() => {
       });
       this.render();
       if (this.ghost) return;
-      play(q.playStart);
+      if (voiceMode()){
+        Voice.reset(q.latin ? "id-ID" : "ar-SA");
+        this.vHeard.textContent = "";
+        this.voiceState(Voice.active ? "on" : "off");
+        if (q.prompt) play(q.playStart);   // susun: jangan bocorkan jawaban lewat audio
+      } else play(q.playStart);
       this.startTimer();
     }
     startTimer(){
@@ -99,7 +116,9 @@ window.Arena = (() => {
     }
     fill(s){
       s.done = true; s.el.classList.add("ok"); s.el.classList.remove("next", "near");
-      s.el.textContent = s.value; s.el.style.fontSize = Math.round(Math.min(30, fontFor(s.value)) * this.scale) + "px";
+      s.el.textContent = s.value;
+      if (this.q?.latin){ s.el.classList.add("latin"); s.el.style.fontSize = Math.round(24 * this.scale) + "px"; }
+      else s.el.style.fontSize = Math.round(Math.min(30, fontFor(s.value)) * this.scale) + "px";
     }
     floater(x, y, text){
       const f = el("div", "floater", this.layer, text);
@@ -121,6 +140,7 @@ window.Arena = (() => {
     reveal(delay = 2800){
       if (this.busy) return; this.busy = true; clearInterval(this.timer);
       this.slots.forEach(s => { if (!s.done){ this.fill(s); s.el.classList.add("missed"); } });
+      if (this.q.reveal) this.pLabel.textContent = this.q.reveal;
       this.cards.forEach(c => c.el.classList.add("pop"));
       this.streak = 0;
       this.goNext(delay);
@@ -129,10 +149,11 @@ window.Arena = (() => {
     correct(c, s){
       this.fill(s); c.done = true; c.el.classList.add("pop");
       this.streak++;
-      const base = this.slots.length > 1 ? 5 : 10, combo = Math.min(this.streak - 1, 3) * 2;
+      const base = this.slots.length > 1 && !voiceMode() ? 5 : 10, combo = Math.min(this.streak - 1, 3) * 2;
       this.score += base + combo;
       const done = this.slots.every(x => x.done);
       let bonus = 0;
+      if (done && this.q.reveal) this.pLabel.textContent = this.q.reveal;
       if (done){
         this.busy = true; clearInterval(this.timer);
         const total = +opt.time; bonus = total ? Math.round(5 * Math.max(0, this.timeLeft) / total) : 0;
@@ -260,6 +281,44 @@ window.Arena = (() => {
       }
       this.render();
     }
+    // ---- jawab dengan suara ----
+    voiceState(st){
+      if (!this.vbar) return;
+      const t = { on:"Silakan baca jawabannya", hold:"Dengarkan dulu", off:"Mikrofon mati", denied:"Izin mikrofon ditolak",
+                  network:"Butuh internet untuk mengenali suara" }[st] || "";
+      this.vState.textContent = this.busy && st === "on" ? "Benar" : t;
+      this.vbar.classList.toggle("listening", st === "on"); this.vbar.classList.toggle("hold", st === "hold");
+    }
+    onVoice({ text, alts, final }){
+      if (this.ghost || this.busy || this.finished) return;
+      this.vHeard.textContent = text;
+      const q = this.q, heard = [text, ...alts];
+      if (q.latin){
+        let best = null;
+        for (const h of heard) for (const c of q.cards){ const v = Quran.simLatin(h, c); if (!best || v > best.v) best = { v, c }; }
+        if (best && best.v >= Math.min(q.th, .7)){
+          if (best.c === q.slots[0]) this.correctVoice(); else if (final){ this.voiceWrong(); }
+        } else if (final && text) this.voiceWrong();
+        return;
+      }
+      const target = Quran.norm(q.voice || q.slots.join(" "));
+      const r = Math.max(...heard.map(h => Quran.recall(target, Quran.norm(h))));
+      if (r >= q.th) this.correctVoice();
+      else if (final && text.split(/\s+/).length >= 2) this.voiceWrong(r);
+    }
+    voiceWrong(r){
+      this.streak = 0; Sfx.wrong();
+      this.vState.textContent = r > .4 ? "Hampir, coba baca lagi" : "Belum tepat, coba lagi";
+      this.vbar.classList.remove("shake"); void this.vbar.offsetWidth; this.vbar.classList.add("shake");
+      Voice.reset();
+    }
+    correctVoice(){
+      const fake = { x:this.w / 2 - 40, y:H * .55, w:80, h:0, el:document.createElement("div") };
+      const left = this.slots.filter(s => !s.done);
+      left.slice(0, -1).forEach(s => this.fill(s));
+      this.correct(fake, left[left.length - 1]);
+      this.vState.textContent = "Benar";
+    }
     destroy(){ clearInterval(this.timer); clearTimeout(this.advT); this.root.remove(); }
   }
 
@@ -344,12 +403,12 @@ window.Arena = (() => {
     a.addEventListener("pointerdown", onDown); a.addEventListener("pointermove", onMove);
     a.addEventListener("pointerup", onUp); a.addEventListener("pointercancel", onUp);
     addEventListener("resize", resize);
-    $("#cam").style.display = opt.control === "touch" || opt.noCam ? "none" : "";
+    $("#cam").style.display = opt.control === "touch" || opt.control === "voice" || opt.noCam ? "none" : "";
 
     try {
       msg("Memuat ayat", "<p>Mengambil teks ayat. Surat atau juz yang baru pertama kali dipilih butuh internet dan sedikit lebih lama.</p>");
       if (opt.questions) qs = opt.questions;
-      else { const verses = await Quran.load(opt.pick); qs = Questions.build(opt.mode, verses, +opt.rounds, opt.names); }
+      else { const verses = await Quran.load(opt.pick); qs = Questions.build(opt.mode, verses, +opt.rounds, opt.names, opt.level); }
       if (!qs.length) throw Object.assign(new Error(), { name:"NO_Q" });
     } catch(e){
       msg("Ayat belum bisa dimuat", e.name === "NO_Q"
@@ -360,7 +419,12 @@ window.Arena = (() => {
       return;
     }
 
-    if (opt.control !== "touch" && !opt.noCam){
+    if (voiceMode() && !Voice.supported){
+      msg("Jawab suara belum didukung", "<p>Browser ini belum bisa mengenali suara. Pakai Google Chrome di laptop atau HP Android, lalu coba lagi.</p>", null, "Menu");
+      $("#msgBtn2").onclick = () => { stop(); opt.onExit(); };
+      return;
+    }
+    if (opt.control !== "touch" && opt.control !== "voice" && !opt.noCam){
       try {
         msg("Menyalakan kamera", "<p>Izinkan akses kamera saat browser bertanya. Memuat pendeteksi tangan, tunggu sebentar.</p>");
         await Gesture.start($("#cam"), { numHands: local2() ? 2 : 1 });
@@ -384,6 +448,14 @@ window.Arena = (() => {
     }
     resize();
     msg();
+    if (voiceMode()){
+      Voice.start("ar-SA", r => boards[0]?.onVoice(r), st => {
+        boards[0]?.voiceState(st);
+        if (st === "denied") msg("Mikrofon tidak bisa dipakai", "<p>Izin mikrofon ditolak. Ketuk ikon gembok di samping alamat web, izinkan Mikrofon, lalu coba lagi.</p>", "Coba lagi", "Menu");
+      });
+      $("#msgBtn").onclick = () => { stop(); start(opt); };
+      $("#msgBtn2").onclick = () => { stop(); opt.onExit(); };
+    }
     boards.forEach(b => b.show(0));
     if (ghost){ ghost.show(0); if (pendingOpp) ghost.applySnapshot(pendingOpp); }
     loop();
@@ -398,7 +470,7 @@ window.Arena = (() => {
   }
 
   function stop(){
-    alive = false; cancelAnimationFrame(raf); audio.pause(); Gesture.stop(); pendingOpp = null;
+    alive = false; cancelAnimationFrame(raf); audio.pause(); Gesture.stop(); Voice.stop(); pendingOpp = null;
     boards.forEach(b => b.destroy()); ghost?.destroy(); boards = []; ghost = null;
     removeEventListener("resize", resize);
     const a = $("#arena");
