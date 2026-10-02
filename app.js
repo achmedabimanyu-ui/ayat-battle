@@ -207,7 +207,6 @@
     Arena.stop();
     if (inGame){ inGame = false; Online.leave(); go("home"); } else go("setup");
   };
-  $("#creditLink").onclick = e => e.preventDefault();
 
   // ---------- SETTINGS ----------
   $("#setQari").innerHTML = QARIS.map(q => `<option value="${q.id}">${q.name}</option>`).join("");

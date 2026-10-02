@@ -243,3 +243,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .surah[hidden]{display:none}
 .surah-grid{max-height:300px}
 #pickCount{margin:10px 0 0;text-align:right}
+
+/* CREDIT IG & WATERMARK */
+.credit em{font-style:normal;font-size:12px;font-weight:700;color:#c2410c}
+.credit:hover{transform:translateY(-1px)}
+.watermark{position:absolute;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);z-index:8;display:flex;align-items:center;gap:7px;
+  padding:4px 10px 4px 5px;background:rgba(255,250,240,.72);border-radius:10px;pointer-events:none;opacity:.85;color:#22245f}
+.watermark img{width:26px;height:auto;display:block}
+.watermark span{display:grid;font-size:10px;line-height:1.15;font-weight:700}
+.watermark b{font-size:11px}
