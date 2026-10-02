@@ -433,3 +433,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
   .plank:hover,.round:hover,.chip:hover,.tab:hover,.opt:hover,.surah:hover,.listen:hover,.next-btn:hover{translate:none;filter:none}
 }
 .round:active,.chip:active,.tab:active,.opt:active,.surah:active,.listen:active,.next-btn:active{transform:none}
+
+/* latar lebar v3 */
+.scene{background:#5fb4d8}
+.sun .rays{transform-origin:960px 230px}
+.sun .glow{transform-origin:960px 230px;animation:glow 5s ease-in-out infinite}
+.sun circle:first-child{transform-origin:960px 230px}
+.cloud{transform-box:fill-box}
+.c1{animation:driftW 46s ease-in-out infinite alternate}
+.c2{animation:driftW2 60s ease-in-out infinite alternate}
+.c3{animation:driftW 70s ease-in-out infinite alternate-reverse}
+@keyframes driftW{to{transform:translateX(120px)}}
+@keyframes driftW2{to{transform:translateX(-140px)}}
+.bird{animation:flyW 34s linear infinite}
+.b1{animation-delay:-5s}.b2{animation-delay:-14s;animation-duration:40s}.b3{animation-delay:-24s;animation-duration:44s}.b4{animation-delay:-30s;animation-duration:38s}
+@keyframes flyW{from{transform:translate(-60px,330px)}50%{transform:translate(800px,290px)}to{transform:translate(1680px,340px)}}
+.d0{animation:dune 22s ease-in-out infinite alternate-reverse}
+.fronds{transform-box:fill-box;transform-origin:50% 100%}
