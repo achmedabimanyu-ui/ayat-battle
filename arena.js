@@ -8,10 +8,13 @@ window.Arena = (() => {
 
   let opt, qs = [], boards = [], ghost = null, raf = 0, ctx, W, H, alive = false, touch = {};
   const audio = new Audio();
-  function play(ref, who){
-    if (!ref || !opt.sound) return;
-    audio.pause(); audio.src = Quran.audioUrl(opt.qari, ref[0], ref[1]); audio.play().catch(() => {});
+  function play(ref){
+    try {
+      if (!ref || !opt.sound) return;
+      audio.pause(); audio.src = Quran.audioUrl(opt.qari, ref[0], ref[1]); audio.play().catch(() => {});
+    } catch(e){}
   }
+  const safely = fn => { try { fn(); } catch(e){ console.warn(e); } };
 
   // =================== PAPAN ===================
   class Board {
@@ -24,6 +27,10 @@ window.Arena = (() => {
       const hq = el("div", "hud-box", hud); el("small", "", hq, "Soal"); this.hQ = el("b", "", hq, "-");
       this.hT = el("div", "hud-box", hud); el("small", "", this.hT, "Waktu"); this.hTime = el("b", "", this.hT, "-");
       this.hT.hidden = !+opt.time;
+      if (!ghost){
+        this.btnNext = el("button", "next-btn", hud, "Lewati");
+        this.btnNext.onclick = () => this.manualNext();
+      }
       this.stage = el("div", "stage", this.root);
       this.prompt = el("div", "prompt", this.stage);
       const ph = el("div", "prompt-head", this.prompt);
@@ -51,8 +58,9 @@ window.Arena = (() => {
     }
 
     show(qi){
-      clearInterval(this.timer);
+      clearInterval(this.timer); clearTimeout(this.advT);
       this.qi = qi; this.q = qs[qi]; this.busy = false; this.dwell = {};
+      if (this.btnNext){ this.btnNext.textContent = "Lewati"; this.btnNext.classList.remove("ready"); }
       const q = this.q;
       this.layer.innerHTML = ""; this.slotWrap.innerHTML = "";
       this.pLabel.textContent = q.label;
@@ -98,38 +106,57 @@ window.Arena = (() => {
       f.style.left = x + "px"; f.style.top = y + "px"; f.style.color = this.color;
       setTimeout(() => f.remove(), 900);
     }
-    reveal(){
-      if (this.busy) return; this.busy = true;
+    // satu-satunya jalan pindah soal: dijadwalkan sekali, aman dari dobel
+    goNext(delay){
+      clearTimeout(this.advT);
+      const at = this.qi;
+      if (this.btnNext){ this.btnNext.textContent = "Lanjut"; this.btnNext.classList.add("ready"); }
+      this.advT = setTimeout(() => { if (alive && this.qi === at && !this.finished) this.next(); }, delay);
+    }
+    manualNext(){
+      if (this.finished) return;
+      if (this.busy){ clearTimeout(this.advT); this.next(); }   // sudah dijawab: langsung lanjut
+      else { this.reveal(1200); }                                // belum: tunjukkan jawaban lalu lanjut
+    }
+    reveal(delay = 2800){
+      if (this.busy) return; this.busy = true; clearInterval(this.timer);
       this.slots.forEach(s => { if (!s.done){ this.fill(s); s.el.classList.add("missed"); } });
       this.cards.forEach(c => c.el.classList.add("pop"));
-      this.streak = 0; play(this.q.playEnd);
-      setTimeout(() => this.next(), 2800);
+      this.streak = 0;
+      this.goNext(delay);
+      play(this.q.playEnd);
     }
     correct(c, s){
       this.fill(s); c.done = true; c.el.classList.add("pop");
       this.streak++;
       const base = this.slots.length > 1 ? 5 : 10, combo = Math.min(this.streak - 1, 3) * 2;
       this.score += base + combo;
-      this.floater(c.x + c.w / 2, c.y, combo ? `+${base} kombo +${combo}` : `+${base}`);
-      if (this.streak >= 2){
-        Sfx.combo(this.streak);
-        const k = el("div", "combo-pop", this.root, `Kombo x${this.streak}`);
-        k.style.color = this.color; if (this.streak >= 4) k.classList.add("big");
-        setTimeout(() => k.remove(), 1100);
-      } else Sfx.correct();
-      if (opt.control === "shoot"){ const n = this.slots.find(x => !x.done); if (n) n.el.classList.add("next"); }
-      if (this.slots.every(x => x.done)){
+      const done = this.slots.every(x => x.done);
+      let bonus = 0;
+      if (done){
         this.busy = true; clearInterval(this.timer);
-        const total = +opt.time, bonus = total ? Math.round(5 * Math.max(0, this.timeLeft) / total) : 0;
-        if (bonus){ this.score += bonus; this.floater(c.x + c.w / 2, c.y - 40, `Cepat +${bonus}`); }
-        play(this.q.playEnd);
-        setTimeout(() => this.next(), 2600);
+        const total = +opt.time; bonus = total ? Math.round(5 * Math.max(0, this.timeLeft) / total) : 0;
+        this.score += bonus;
+        this.goNext(2600);                                       // dijadwalkan dulu, efek belakangan
       }
       this.render();
+      safely(() => {
+        this.floater(c.x + c.w / 2, c.y, combo ? `+${base} kombo +${combo}` : `+${base}`);
+        if (bonus) this.floater(c.x + c.w / 2, c.y - 40, `Cepat +${bonus}`);
+        if (this.streak >= 2){
+          Sfx.combo(this.streak);
+          const k = el("div", "combo-pop", this.root, `Kombo x${this.streak}`);
+          k.style.color = this.color; if (this.streak >= 4) k.classList.add("big");
+          setTimeout(() => k.remove(), 1100);
+        } else Sfx.correct();
+        if (opt.control === "shoot" && !done){ const n = this.slots.find(x => !x.done); if (n) n.el.classList.add("next"); }
+        if (done) play(this.q.playEnd);
+      });
     }
     wrong(c){ Sfx.wrong(); c.el.classList.remove("wrong"); void c.el.offsetWidth; c.el.classList.add("wrong"); this.streak = 0; c.vy = 3; }
     next(){
-      if (!alive) return;
+      if (!alive || this.finished) return;
+      clearTimeout(this.advT);
       if (this.qi + 1 >= qs.length){
         this.finished = true; this.busy = true; this.render();
         this.layer.innerHTML = ""; this.slotWrap.innerHTML = "";
@@ -233,7 +260,7 @@ window.Arena = (() => {
       }
       this.render();
     }
-    destroy(){ clearInterval(this.timer); this.root.remove(); }
+    destroy(){ clearInterval(this.timer); clearTimeout(this.advT); this.root.remove(); }
   }
 
   // =================== ARENA ===================
@@ -288,12 +315,14 @@ window.Arena = (() => {
     }
     pointers.push(...Object.values(touch));
     // bagi pointer ke papan sesuai posisi
-    boards.forEach(b => {
+    boards.forEach(b => safely(() => {
       const mine = pointers.filter(p => !local2() || (p.x >= b.x && p.x < b.x + b.w))
         .map(p => ({ ...p, x:p.x - b.x, fx:p.fx != null ? p.fx - b.x : null }));
       b.update(mine);
       if (b === boards[0]) lastPointers = mine;
-    });
+      // penjaga: semua kotak sudah terisi tapi belum pindah soal
+      if (!b.finished && b.slots.length && b.slots.every(x => x.done) && !b.busy){ b.busy = true; b.goNext(1500); }
+    }));
     touch = Object.fromEntries(Object.entries(touch).filter(([, t]) => t.pinching).map(([k, t]) => [k, { ...t, shot:false }]));
     if (opt.online && performance.now() - lastSend > 100){
       lastSend = performance.now(); opt.onProgress?.(boards[0].snapshot(lastPointers));

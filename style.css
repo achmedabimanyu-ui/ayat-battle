@@ -252,3 +252,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .watermark img{width:26px;height:auto;display:block}
 .watermark span{display:grid;font-size:10px;line-height:1.15;font-weight:700}
 .watermark b{font-size:11px}
+
+/* TOMBOL LANJUT / LEWATI */
+.next-btn{pointer-events:auto;align-self:center;padding:5px 14px 7px;font-family:var(--font-ui);font-size:16px;color:var(--ink);
+  background:var(--stone);border:3px solid var(--ink);border-radius:12px;box-shadow:0 4px 0 var(--stone-d)}
+.next-btn.ready{background:var(--moss);box-shadow:0 4px 0 var(--moss-d);animation:nudge 1s ease-in-out infinite}
+.next-btn:active{transform:translateY(4px);box-shadow:none}
+@keyframes nudge{50%{transform:translateX(3px)}}

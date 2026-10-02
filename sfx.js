@@ -10,6 +10,7 @@ window.Sfx = (() => {
     return ac;
   }
   function tone(freq, start, dur, type = "triangle", vol = .5, slideTo){
+    if (!isFinite(freq) || freq <= 0) return;
     const a = ctx(), t = a.currentTime + start;
     const o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.setValueAtTime(freq, t);
@@ -20,16 +21,18 @@ window.Sfx = (() => {
   }
   const NOTES = [523, 587, 659, 784, 880, 1047, 1175, 1319]; // tangga nada mayor, naik terus
 
-  return {
+  const safe = fn => (...a) => { try { fn(...a); } catch(e){ console.warn('sfx', e); } };
+  const api = {
     set enabled(v){ on = v; },
     // jawaban benar: "ting" dua nada
     correct(){ if (!on) return; tone(784, 0, .12, "sine", .45); tone(1175, .07, .22, "sine", .4); },
     // kombo: arpeggio yang makin tinggi dan makin panjang sesuai jumlah kombo
     combo(n){
       if (!on) return;
-      const steps = Math.min(n + 1, 6), base = Math.min(n - 2, 3);
-      for (let i = 0; i < steps; i++) tone(NOTES[base + i] , i * .06, .18, "square", .18);
-      tone(NOTES[base + steps] * 2, steps * .06, .35, "sine", .35);
+      const note = i => NOTES[Math.min(i, NOTES.length - 1)];
+      const steps = Math.min(n + 1, 5), base = Math.max(0, Math.min(n - 2, 2));
+      for (let i = 0; i < steps; i++) tone(note(base + i), i * .06, .18, "square", .18);
+      tone(note(base + steps) * 2, steps * .06, .35, "sine", .35);
       if (n >= 4) tone(130, 0, .25, "sawtooth", .15, 260);       // dentuman di kombo besar
     },
     // salah: "dug" rendah yang lembut, tidak menakutkan
@@ -39,4 +42,6 @@ window.Sfx = (() => {
     // selesai: fanfare singkat
     finish(){ if (!on) return; [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .12, i === 3 ? .6 : .14, "triangle", .4)); }
   };
+  ["correct", "combo", "wrong", "shot", "finish"].forEach(k => api[k] = safe(api[k]));
+  return api;
 })();
