@@ -111,6 +111,12 @@ window.Arena = (() => {
       const base = this.slots.length > 1 ? 5 : 10, combo = Math.min(this.streak - 1, 3) * 2;
       this.score += base + combo;
       this.floater(c.x + c.w / 2, c.y, combo ? `+${base} kombo +${combo}` : `+${base}`);
+      if (this.streak >= 2){
+        Sfx.combo(this.streak);
+        const k = el("div", "combo-pop", this.root, `Kombo x${this.streak}`);
+        k.style.color = this.color; if (this.streak >= 4) k.classList.add("big");
+        setTimeout(() => k.remove(), 1100);
+      } else Sfx.correct();
       if (opt.control === "shoot"){ const n = this.slots.find(x => !x.done); if (n) n.el.classList.add("next"); }
       if (this.slots.every(x => x.done)){
         this.busy = true; clearInterval(this.timer);
@@ -121,7 +127,7 @@ window.Arena = (() => {
       }
       this.render();
     }
-    wrong(c){ c.el.classList.remove("wrong"); void c.el.offsetWidth; c.el.classList.add("wrong"); this.streak = 0; c.vy = 3; }
+    wrong(c){ Sfx.wrong(); c.el.classList.remove("wrong"); void c.el.offsetWidth; c.el.classList.add("wrong"); this.streak = 0; c.vy = 3; }
     next(){
       if (!alive) return;
       if (this.qi + 1 >= qs.length){
@@ -148,7 +154,7 @@ window.Arena = (() => {
     }
     shoot(x, y){
       if (this.busy) return;
-      flash(x + this.x, y);
+      flash(x + this.x, y); Sfx.shot();
       const c = this.cardAt(x, y, 30); if (!c) return;
       const t = this.slots.find(s => !s.done);
       t && t.value === c.value ? this.correct(c, t) : this.wrong(c);
@@ -264,6 +270,7 @@ window.Arena = (() => {
       const w = a.score === b.score ? "Seri, dua-duanya hebat" : a.score > b.score ? `${a.name} menang` : `${b.name} menang`;
       html = `<p class="result-big">${w}</p><div class="duel-score"><span class="p1">${a.score}</span><span class="vs">lawan</span><span class="p2">${b.score}</span></div>`;
     } else html = `<p class="result-big">${opt.name ? opt.name + ", poinmu" : "Poinmu"}</p><div class="duel-score"><span class="p1">${me.score}</span></div>`;
+    Sfx.finish();
     msg("Selesai", html + "<p>Barakallahu fiik. Terus murajaah, ya.</p>", opt.online ? null : "Main lagi", "Menu");
     $("#msgBtn").onclick = () => { stop(); start(opt); };
     $("#msgBtn2").onclick = () => { stop(); opt.onExit(); };
@@ -302,7 +309,7 @@ window.Arena = (() => {
   function onUp(e){ const t = touch[e.pointerId]; if (t) t.pinching = false; }
 
   async function start(options){
-    opt = options; alive = true; touch = {};
+    opt = options; alive = true; touch = {}; Sfx.enabled = opt.sound !== false;
     $("#boards").innerHTML = ""; boards = []; ghost = null;
     const a = $("#arena");
     a.addEventListener("pointerdown", onDown); a.addEventListener("pointermove", onMove);
