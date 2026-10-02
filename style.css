@@ -173,7 +173,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .listen:active{transform:translateY(3px);box-shadow:none}
 .prompt p{text-align:center;font-size:16px;margin-top:4px}
 .prompt p.ar{font-family:var(--font-ar);font-size:clamp(24px,4.4vw,36px);line-height:1.7}
-.slots{position:static;translate:none;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:min(900px,96vw)}
+.slots{position:static;translate:none;display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px;max-width:min(900px,96vw)}
 .slot{min-width:110px;min-height:64px;height:auto;padding:4px 12px;text-align:center;line-height:1.6}
 .slot.wide{min-width:min(520px,90vw);font-family:var(--font-body);font-size:16px}
 .slot.next{border-color:var(--gold);border-style:solid;box-shadow:0 0 0 4px rgba(246,198,74,.5)}
@@ -191,3 +191,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .duel-score span{font-family:var(--font-ui);font-size:54px;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
 .duel-score .p1{color:#f6a531}.duel-score .p2{color:#5aa9ff}
 .duel-score .vs{font-size:18px;-webkit-text-stroke:0;color:var(--ink)}
+
+/* LOBBY ONLINE */
+.code-big{font-family:var(--font-ui);font-size:56px;letter-spacing:.15em;text-align:center;color:var(--gold);-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;margin:4px 0}
+.lobby-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.lobby-row .field{flex:1;margin:0}
+.code-input{font-family:var(--font-ui)!important;font-size:28px!important;letter-spacing:.2em;text-align:center}
+.players{display:grid;gap:8px;margin:10px 0}
+.player{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--cream);border:2.5px solid var(--ink);border-radius:12px;font-weight:700}
+.player .dot{width:14px;height:14px;border-radius:50%;background:#f6a531;border:2px solid var(--ink)}
+.player.p2 .dot{background:#5aa9ff}
+.player.wait{opacity:.6;font-weight:500}
+.lobby-note{font-size:14px;line-height:1.5;opacity:.85;margin-top:8px}
+.countdown{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(40,20,5,.55);font-family:var(--font-ui);font-size:160px;color:var(--gold);-webkit-text-stroke:6px var(--ink);paint-order:stroke fill}
+.countdown[hidden]{display:none}

@@ -5,6 +5,7 @@ window.Arena = (() => {
 
   let opt, qs = [], qi = 0, q, cards = [], slots = [], raf = 0, timerId = 0, timeLeft = 0, busy = false;
   let score = {}, streak = {}, touch = {}, ctx, W, H, audio = new Audio(), alive = false;
+  let opp = { score:0, qi:0, done:false }, finished = false;
 
   // ---------- util tampilan ----------
   function msg(title, html, b1, b2){
@@ -21,9 +22,18 @@ window.Arena = (() => {
     ctx = c.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   const two = () => opt.play === "duel-local";
+  const myTotal = () => two() ? (score.L || 0) : Object.values(score).reduce((a, b) => a + b, 0);
   function renderScore(){
-    $("#hudP1 b").textContent = two() ? (score.L || 0) : Object.values(score).reduce((a, b) => a + b, 0);
-    $("#hudP2 b").textContent = score.R || 0;
+    $("#hudP1 b").textContent = myTotal();
+    $("#hudP2 b").textContent = opt.online ? opp.score : (score.R || 0);
+    if (opt.online) $("#hudP2 small").textContent = `${opt.oppName} ${opp.done ? "selesai" : (opp.qi + 1) + "/" + qs.length}`;
+    if (opt.online && alive) opt.onProgress?.({ score:myTotal(), qi, done:finished });
+  }
+  function setOpponent(p){
+    opp = { ...opp, ...p };
+    if (!alive) return;
+    renderScore();
+    if (finished) finish();
   }
   function floater(x, y, text, color){
     const el = document.createElement("div"); el.className = "floater"; el.textContent = text;
@@ -42,6 +52,7 @@ window.Arena = (() => {
     q = qs[qi]; busy = false;
     $("#cards").innerHTML = ""; $("#slots").innerHTML = "";
     $("#hudStatus b").textContent = `${qi + 1}/${qs.length}`;
+    renderScore();
     $("#promptLabel").textContent = q.label;
     $("#prompt").hidden = false;
     $("#promptText").textContent = q.prompt || "Susun potongan ayat sesuai urutan";
@@ -108,6 +119,7 @@ window.Arena = (() => {
   }
 
   function next(){
+    if (!alive) return;
     qi++;
     if (qi >= qs.length) return finish();
     showQuestion();
@@ -115,15 +127,19 @@ window.Arena = (() => {
 
   function finish(){
     clearInterval(timerId); busy = true;
-    const p1 = two() ? (score.L || 0) : Object.values(score).reduce((a, b) => a + b, 0), p2 = score.R || 0;
+    if (!finished){ finished = true; qi = qs.length - 1; renderScore(); }
+    const p1 = myTotal(), p2 = opt.online ? opp.score : (score.R || 0);
     let html;
-    if (two()){
+    if (opt.online){
+      const w = !opp.done ? `Menunggu ${opt.oppName} selesai` : p1 === p2 ? "Seri, dua-duanya hebat" : p1 > p2 ? "Kamu menang" : `${opt.oppName} menang`;
+      html = `<p class="result-big">${w}</p><div class="duel-score"><span class="p1">${p1}</span><span class="vs">lawan</span><span class="p2">${p2}</span></div>`;
+    } else if (two()){
       const w = p1 === p2 ? "Seri, dua-duanya hebat" : p1 > p2 ? "Pemain 1 menang" : "Pemain 2 menang";
       html = `<p class="result-big">${w}</p><div class="duel-score"><span class="p1">${p1}</span><span class="vs">lawan</span><span class="p2">${p2}</span></div>`;
     } else {
       html = `<p class="result-big">${opt.name ? opt.name + ", poinmu" : "Poinmu"}</p><div class="duel-score"><span class="p1">${p1}</span></div>`;
     }
-    msg("Selesai", html + `<p>Barakallahu fiik. Terus murajaah, ya.</p>`, "Main lagi", "Menu");
+    msg("Selesai", html + `<p>Barakallahu fiik. Terus murajaah, ya.</p>`, opt.online ? null : "Main lagi", "Menu");
     $("#msgBtn").onclick = () => { stop(); start(opt); };
     $("#msgBtn2").onclick = () => { stop(); opt.onExit(); };
   }
@@ -223,9 +239,10 @@ window.Arena = (() => {
 
   // ---------- mulai / berhenti ----------
   async function start(options){
-    opt = options; score = {}; streak = {}; touch = {}; qi = 0; alive = true;
+    opt = options; score = {}; streak = {}; touch = {}; qi = 0; alive = true; finished = false; opp = { score:0, qi:0, done:false };
     resize(); addEventListener("resize", resize);
-    $("#hudP2").hidden = !two();
+    $("#hudP2").hidden = !two() && !opt.online;
+    $("#hudP2 small").textContent = opt.online ? opt.oppName : "Pemain 2";
     $("#hudP1 small").textContent = two() ? "Pemain 1" : (opt.name || "Poin");
     renderScore();
     $("#prompt").hidden = true; $("#cards").innerHTML = ""; $("#slots").innerHTML = "";
@@ -237,8 +254,11 @@ window.Arena = (() => {
 
     try {
       msg("Memuat ayat", "<p>Mengambil teks ayat. Pertama kali butuh internet, berikutnya lebih cepat.</p>");
-      const data = await Quran.load(opt.surahs);
-      qs = Questions.build(opt.mode, data, +opt.rounds, opt.names);
+      if (opt.questions) qs = opt.questions;
+      else {
+        const data = await Quran.load(opt.surahs);
+        qs = Questions.build(opt.mode, data, +opt.rounds, opt.names);
+      }
       if (!qs.length) throw Object.assign(new Error(), { name:"NO_Q" });
     } catch(e){
       msg("Ayat belum bisa dimuat", e.name === "NO_Q"
@@ -276,5 +296,5 @@ window.Arena = (() => {
     a.removeEventListener("pointerup", onUp); a.removeEventListener("pointercancel", onUp);
   }
 
-  return { start, stop };
+  return { start, stop, setOpponent };
 })();

@@ -108,6 +108,40 @@
     </div>
   </section>
 
+  <!-- LOBBY ONLINE -->
+  <section class="screen" id="lobby">
+    <header class="bar">
+      <button class="round sm" id="lobbyBack" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <h2 class="board">Duel online</h2>
+      <span class="spacer"></span>
+    </header>
+
+    <div class="panel" id="lobbyChoose">
+      <label class="field">Namamu
+        <input id="lobbyName" maxlength="14" placeholder="Contoh: Aisyah">
+      </label>
+      <h3 class="step">Buat room</h3>
+      <p class="lobby-note">Pakai surat dan permainan yang sudah kamu pilih. Kode room dibagikan ke lawan, misalnya lewat chat Google Meet atau Zoom.</p>
+      <div class="start-wrap"><button class="plank wood" id="btnCreate">Buat room</button></div>
+      <h3 class="step" style="margin-top:22px">Gabung room</h3>
+      <div class="lobby-row">
+        <label class="field">Kode room
+          <input id="joinCode" class="code-input" inputmode="numeric" maxlength="4" placeholder="0000">
+        </label>
+        <button class="plank moss" id="btnJoin" style="width:auto">Gabung</button>
+      </div>
+      <p class="hint" id="lobbyHint"></p>
+    </div>
+
+    <div class="panel" id="lobbyRoom" hidden>
+      <h3 class="step">Kode room</h3>
+      <p class="code-big" id="roomCode">----</p>
+      <div class="players" id="players"></div>
+      <p class="lobby-note" id="roomNote"></p>
+      <div class="start-wrap"><button class="plank wood big" id="btnDuel" hidden>Mulai duel</button></div>
+    </div>
+  </section>
+
   <!-- ARENA -->
   <section class="screen" id="arena">
     <video id="cam" playsinline muted></video>
@@ -142,6 +176,7 @@
     </div>
   </section>
 </main>
+<div class="countdown" id="countdown" hidden>3</div>
 
 <!-- SETTINGS MODAL -->
 <div class="modal" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
@@ -190,11 +225,14 @@
   <symbol id="i-next" viewBox="0 0 48 48"><rect x="4" y="8" width="40" height="12" rx="3" fill="currentColor"/><path d="M24 24v8m-5-4 5 5 5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="4" y="36" width="40" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="4 3"/></symbol>
 </svg>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 <script src="data.js"></script>
 <script src="gesture.js"></script>
 <script src="quran.js"></script>
 <script src="questions.js"></script>
 <script src="arena.js"></script>
+<script src="online.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -91,8 +91,95 @@
     names:Object.fromEntries(SURAHS.map(s => [s.no, s.name])),
     onExit:() => go("home")
   });
-  $("#btnStart").onclick = () => { go("arena"); Arena.start(gameOpts()); };
-  $("#arenaBack").onclick = () => { Arena.stop(); go("setup"); };
+  $("#btnStart").onclick = () => {
+    if (S.play === "duel-online"){ openLobby(); return; }
+    go("arena"); Arena.start(gameOpts());
+  };
+
+  // ---------- DUEL ONLINE ----------
+  const lobbyHint = t => { $("#lobbyHint").textContent = t; };
+  function openLobby(){
+    $("#lobbyName").value = S.name; $("#joinCode").value = "";
+    $("#lobbyChoose").hidden = false; $("#lobbyRoom").hidden = true; lobbyHint("");
+    if (!Online.ready()) lobbyHint("Duel online belum diaktifkan. Isi file config.js dengan data Supabase.");
+    go("lobby");
+  }
+  function lobbyName(){
+    const n = $("#lobbyName").value.trim();
+    if (!n){ lobbyHint("Tulis namamu dulu."); return null; }
+    S.name = n; save(); return n;
+  }
+  function renderPlayers(list){
+    const host = list.find(p => p.role === "host"), guest = list.find(p => p.role === "guest");
+    $("#players").innerHTML =
+      `<div class="player"><span class="dot"></span>${host ? host.name : "Pembuat room keluar"}</div>` +
+      (guest ? `<div class="player p2"><span class="dot"></span>${guest.name}</div>`
+             : `<div class="player p2 wait"><span class="dot"></span>Menunggu lawan bergabung</div>`);
+    const isHost = Online.role === "host";
+    $("#btnDuel").hidden = !(isHost && guest);
+    $("#roomNote").textContent = isHost
+      ? (guest ? "Lawan sudah masuk. Tekan Mulai duel." : "Bagikan kode ini ke lawan.")
+      : "Tunggu pembuat room menekan Mulai duel.";
+    const other = list.find(p => p.id !== Online.me?.id);
+    if (other) oppName = other.name;
+    if (inGame && !other) Arena.setOpponent({ done:true });
+  }
+  let oppName = "Lawan", inGame = false;
+  Online.on("players", renderPlayers);
+  Online.on("progress", p => Arena.setOpponent(p));
+  Online.on("start", p => beginDuel(p));
+
+  function showRoom(code){
+    $("#roomCode").textContent = code;
+    $("#lobbyChoose").hidden = true; $("#lobbyRoom").hidden = false;
+    renderPlayers(Online.players());
+  }
+  $("#btnCreate").onclick = async () => {
+    const n = lobbyName(); if (!n || !Online.ready()) return;
+    if (!S.surahs.length){ lobbyHint("Pilih surat dulu di layar sebelumnya."); return; }
+    lobbyHint("Membuat room...");
+    try { showRoom(await Online.create(n)); lobbyHint(""); }
+    catch(e){ lobbyHint("Gagal terhubung. Periksa internet dan isi config.js."); }
+  };
+  $("#btnJoin").onclick = async () => {
+    const n = lobbyName(); if (!n || !Online.ready()) return;
+    const code = $("#joinCode").value.trim();
+    if (!/^\d{4}$/.test(code)){ lobbyHint("Kode room terdiri dari 4 angka."); return; }
+    lobbyHint("Masuk ke room...");
+    try { await Online.join(code, n); showRoom(code); lobbyHint(""); }
+    catch(e){ lobbyHint(e.message === "NO_ROOM" ? "Room tidak ditemukan. Cek kodenya." : e.message === "FULL" ? "Room sudah penuh." : "Gagal terhubung. Periksa internet."); }
+  };
+  $("#btnDuel").onclick = async () => {
+    $("#btnDuel").disabled = true;
+    $("#roomNote").textContent = "Menyiapkan soal...";
+    try {
+      const o = gameOpts();
+      const data = await Quran.load(o.surahs);
+      const questions = Questions.build(o.mode, data, +o.rounds, o.names);
+      if (!questions.length) throw new Error();
+      const payload = { questions, mode:o.mode, time:o.time, startAt:Date.now() + 3500 };
+      await Online.start(payload);
+      beginDuel(payload);
+    } catch(e){ $("#roomNote").textContent = "Soal gagal disiapkan. Periksa internet atau pilihan surat."; }
+    $("#btnDuel").disabled = false;
+  };
+  function beginDuel(p){
+    let n = 3; const cd = $("#countdown"); cd.textContent = n; cd.hidden = false;
+    const t = setInterval(() => {
+      n--; if (n > 0) cd.textContent = n;
+      else {
+        clearInterval(t); cd.hidden = true; inGame = true; go("arena");
+        Arena.start({ ...gameOpts(), play:"duel-online", mode:p.mode, time:p.time, questions:p.questions,
+          online:true, oppName, onProgress:x => Online.progress(x),
+          onExit:() => { inGame = false; Online.leave(); go("home"); } });
+      }
+    }, 1000);
+  }
+  $("#lobbyBack").onclick = () => { Online.leave(); go("setup"); };
+  $("#arenaBack").onclick = () => {
+    Arena.stop();
+    if (inGame){ inGame = false; Online.leave(); go("home"); } else go("setup");
+  };
   $("#creditLink").onclick = e => e.preventDefault();
 
   // ---------- SETTINGS ----------
