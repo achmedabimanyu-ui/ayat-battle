@@ -47,6 +47,10 @@
       <button class="round" id="btnSound" aria-label="Suara"><svg viewBox="0 0 24 24"><use href="#i-sound"/></svg></button>
       <button class="round" data-go="howto" aria-label="Bantuan"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></button>
     </div>
+    <a class="credit" href="#" id="creditLink" aria-label="El-Kisai Education">
+      <img src="logo-elkisai.png" alt="" width="44" height="45">
+      <span>Dipersembahkan oleh<b>El-Kisai Education</b></span>
+    </a>
   </section>
 
   <!-- SETUP -->
@@ -104,14 +108,25 @@
     </div>
   </section>
 
-  <!-- PLACEHOLDER GAME -->
-  <section class="screen" id="game">
-    <header class="bar">
-      <button class="round sm" data-go="setup" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
-      <h2 class="board">Siap main</h2>
-      <span class="spacer"></span>
+  <!-- ARENA (uji gestur) -->
+  <section class="screen" id="arena">
+    <video id="cam" playsinline muted></video>
+    <canvas id="fx"></canvas>
+    <div id="cards"></div>
+    <div class="slots" id="slots"></div>
+    <header class="hud">
+      <button class="round sm" id="arenaBack" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <div class="hud-box" id="hudP1"><small>Poin</small><b>0</b></div>
+      <div class="hud-box p2" id="hudP2" hidden><small>Pemain 2</small><b>0</b></div>
+      <div class="hud-box status" id="hudStatus"><small>Status</small><b>Siap</b></div>
     </header>
-    <div class="panel prose" id="gameSummary"></div>
+    <div class="arena-msg" id="arenaMsg" hidden>
+      <div class="modal-card">
+        <h2 class="board" id="msgTitle">Menyalakan kamera</h2>
+        <p id="msgText">Izinkan akses kamera saat browser bertanya.</p>
+        <button class="plank wood" id="msgBtn" hidden>Coba lagi</button>
+      </div>
+    </div>
   </section>
 </main>
 
@@ -163,6 +178,8 @@
 </svg>
 
 <script src="data.js"></script>
+<script src="gesture.js"></script>
+<script src="arena.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

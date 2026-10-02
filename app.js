@@ -86,18 +86,12 @@
   }
 
   $("#btnStart").onclick = () => {
-    const names = S.surahs.slice().sort((a,b)=>a-b).map(n => SURAHS.find(s => s.no === n).name).join(", ");
-    $("#gameSummary").innerHTML = `
-      <h3>Pengaturan permainan</h3>
-      <p><b>Jenis</b>: ${PLAY_TITLES[S.play]}</p>
-      <p><b>Permainan</b>: ${MODES.find(m=>m.id===S.mode).name}</p>
-      <p><b>Cara main</b>: ${CONTROLS.find(c=>c.id===S.control).name}</p>
-      <p><b>Surat</b>: ${names}</p>
-      <p><b>Soal</b>: ${S.rounds}, waktu ${S.time === "0" ? "tanpa batas" : S.time + " detik"}</p>
-      <h3>Segera hadir</h3>
-      <p>Arena permainan sedang dibangun di tahap berikutnya.</p>`;
-    go("game");
+    go("arena");
+    Arena.start({ control:S.control, play:S.play, name:S.name });
   };
+  $("#arenaBack").onclick = () => { Arena.stop(); go("setup"); };
+  $("#msgBtn").onclick = () => { Arena.stop(); Arena.start({ control:S.control, play:S.play, name:S.name }); };
+  $("#creditLink").onclick = e => e.preventDefault();
 
   // ---------- SETTINGS ----------
   $("#setQari").innerHTML = QARIS.map(q => `<option value="${q.id}">${q.name}</option>`).join("");
