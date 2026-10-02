@@ -3,7 +3,7 @@
   const $$ = s => [...document.querySelectorAll(s)];
 
   // ---------- STATE (tersimpan di browser) ----------
-  const defaults = { name:"", qari:"Husary_128kbps", time:"30", rounds:"10", sound:true, level:"easy",
+  const defaults = { name:"", qari:"Husary_128kbps", time:"30", rounds:"10", sound:true, level:"easy", materi:"huruf", tahap:1,
                      surahs:[112,113,114], mode:"susun", control:"touch", play:"solo" };
   let S = { ...defaults };
   try { S = { ...defaults, ...JSON.parse(localStorage.getItem("ayatBattle") || "{}") }; } catch(e){}
@@ -102,12 +102,21 @@
     render();
   }
   optionGroup($("#modeOpts"), MODES, "mode");
+  optionGroup($("#materiOpts"), MATERI, "materi");
+  $("#tahapSel").innerHTML = TAHAP.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+  $("#tahapSel").value = S.tahap;
+  $("#tahapSel").onchange = e => { S.tahap = +e.target.value; save(); };
+  const hijNoPick = () => S.mode === "hijaiyah" && S.materi !== "kata";
   optionGroup($("#ctrlOpts"), CONTROLS, "control");
 
   // ---------- VALIDATION ----------
   function validate(){
     let msg = "";
-    if (!pick().list.length) msg = S.pickBy === "juz" ? "Pilih minimal satu juz." : "Pilih minimal satu surat.";
+    $("#hijPanel").hidden = S.mode !== "hijaiyah";
+    $("#tahapField").hidden = S.materi !== "kata";
+    if (!hijNoPick() && !pick().list.length) msg = S.pickBy === "juz" ? "Pilih minimal satu juz." : "Pilih minimal satu surat.";
+    else if (S.control === "write" && !(S.mode === "hijaiyah" && ["huruf", "sambung"].includes(S.materi))) msg = "Cara main Tulis untuk Hijaiyah: huruf satuan atau huruf sambung.";
+    else if (S.control === "voice" && S.mode === "hijaiyah" && S.materi !== "kata") msg = "Jawab dengan suara di Hijaiyah hanya untuk materi Kata Al-Qur'an.";
     else if (S.control === "voice" && S.play === "duel-local") msg = "Jawab dengan suara hanya untuk main sendiri atau duel online, karena satu mikrofon tidak bisa membedakan dua pemain.";
     else if (S.control === "voice" && !Voice.supported) msg = "Jawab dengan suara butuh Google Chrome di laptop atau HP Android.";
     $("#startHint").textContent = msg;
@@ -116,7 +125,7 @@
 
   const gameOpts = () => ({
     control:S.control, play:S.play, name:S.name, mode:S.mode, qari:S.qari, sound:S.sound,
-    time:S.time, rounds:S.rounds, pick:pick(), level:S.level,
+    time:S.time, rounds:S.rounds, pick:pick(), level:S.level, materi:S.materi, tahap:S.tahap,
     names:Object.fromEntries(SURAHS.map(s => [s.no, s.name])),
     onExit:() => go("home")
   });
@@ -165,7 +174,7 @@
   }
   $("#btnCreate").onclick = async () => {
     const n = lobbyName(); if (!n || !Online.ready()) return;
-    if (!pick().list.length){ lobbyHint("Pilih surat atau juz dulu di layar sebelumnya."); return; }
+    if (!hijNoPick() && !pick().list.length){ lobbyHint("Pilih surat atau juz dulu di layar sebelumnya."); return; }
     lobbyHint("Membuat room...");
     try { showRoom(await Online.create(n)); lobbyHint(""); }
     catch(e){ lobbyHint("Gagal terhubung. Periksa internet dan isi config.js."); }
@@ -183,8 +192,7 @@
     $("#roomNote").textContent = "Menyiapkan soal...";
     try {
       const o = gameOpts();
-      const verses = await Quran.load(o.pick);
-      const questions = Questions.build(o.mode, verses, +o.rounds, o.names, o.level);
+      const questions = await Questions.make(o);
       if (!questions.length) throw new Error();
       const payload = { questions, mode:o.mode, time:o.time, startAt:Date.now() + 3500 };
       await Online.start(payload);

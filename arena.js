@@ -12,7 +12,14 @@ window.Arena = (() => {
   function play(ref){
     try {
       if (!ref || !opt.sound) return;
-      audio.pause(); audio.src = Quran.audioUrl(opt.qari, ref[0], ref[1]);
+      if (ref.tts){                                   // huruf berharakat: suara bawaan perangkat
+        if (!window.speechSynthesis) return;
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(ref.tts); u.lang = "ar-SA"; u.rate = .7;
+        const v = speechSynthesis.getVoices().find(x => x.lang?.startsWith("ar")); if (v) u.voice = v;
+        speechSynthesis.speak(u); return;
+      }
+      audio.pause(); audio.src = ref.url || Quran.audioUrl(opt.qari, ref[0], ref[1]);
       if (voiceMode() && Voice.active) Voice.hold(true);
       audio.play().catch(() => { if (voiceMode()) Voice.hold(false); });
     } catch(e){}
@@ -43,11 +50,15 @@ window.Arena = (() => {
         const b = el("button", "listen", ph);
         b.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound"/></svg>Dengar';
         b.onclick = () => play(this.q?.hint || this.q?.playStart);
+        this.listen = b;
       }
       this.pText = el("p", "", this.prompt); this.pText.dir = "rtl";
       this.slotWrap = el("div", "slots", this.stage); this.slotWrap.dir = "rtl";
       this.layer = el("div", "layer", this.root);
       this.wait = null;
+      if (!ghost && opt.control === "write"){
+        this.pad = Draw.pad(this.root, p => this.checkWrite(p));
+      }
       if (!ghost && voiceMode()){
         this.vbar = el("div", "voice-bar", this.root);
         this.vMic = el("div", "mic", this.vbar); this.vMic.innerHTML = '<svg viewBox="0 0 48 48"><use href="#i-mic"/></svg>';
@@ -75,18 +86,21 @@ window.Arena = (() => {
       const q = this.q;
       this.layer.innerHTML = ""; this.slotWrap.innerHTML = "";
       this.pLabel.textContent = q.label;
+      if (this.listen) this.listen.hidden = !(q.hint || q.playStart || (q.playEnd && !q.write));
       this.pText.textContent = q.prompt || "Susun potongan ayat sesuai urutan";
-      this.pText.className = q.prompt ? "ar" : "";
+      this.pText.className = q.promptClass || (q.prompt ? "ar" : "");
+      this.pText.dir = q.promptClass === "big-latin" ? "ltr" : "rtl";
       const single = q.slots.length === 1;
       this.slots = q.slots.map((t, i) => {
-        const e = el("div", "slot" + (single ? " wide" : ""), this.slotWrap, single ? "Taruh jawaban di sini" : "");
+        const e = el("div", "slot" + (single ? " wide" : ""), this.slotWrap, single ? (q.write ? "Tulis di papan" : voiceMode() ? "Baca dengan suara" : "Taruh jawaban di sini") : "");
         if (opt.control === "shoot" && i === 0 && !this.ghost) e.classList.add("next");
         return { el:e, value:t, done:false };
       });
       const top = this.top();
       this.cards = q.cards.map(t => {
-        const e = el("div", "card" + (this.ghost ? " ghost-card" : "") + (q.latin ? " latin" : ""), this.layer, t);
-        e.style.fontSize = Math.round((q.latin ? 24 : fontFor(t)) * this.scale) + "px";
+        const lat = q.latin || q.cardClass === "latin";
+        const e = el("div", "card" + (this.ghost ? " ghost-card" : "") + (lat ? " latin" : "") + (q.cardClass ? " " + q.cardClass : ""), this.layer, t);
+        e.style.fontSize = Math.round((lat ? 26 : q.cardClass === "letter" ? 52 : q.cardClass === "word" ? 40 : fontFor(t)) * this.scale) + "px";
         if (voiceMode() && !q.latin && !this.ghost) e.hidden = true;   // mode suara: jawab dengan membaca
         const c = { el:e, value:t, held:null, done:false, w:e.offsetWidth, h:e.offsetHeight };
         c.x = 8 + Math.random() * Math.max(1, this.w - c.w - 16);
@@ -97,6 +111,12 @@ window.Arena = (() => {
       });
       this.render();
       if (this.ghost) return;
+      if (this.pad){
+        this.pad.clear(); this.pad.resize();
+        const w = q.write || {};
+        this.pad.setGuide(w.guide ? w.target : "", true);
+        if (w.show && !w.guide && q.promptClass === "big-latin") this.pText.textContent = `${q.prompt}  ${w.target}`;
+      }
       if (voiceMode()){
         Voice.reset(q.latin ? "id-ID" : "ar-SA");
         this.vHeard.textContent = "";
@@ -117,7 +137,8 @@ window.Arena = (() => {
     fill(s){
       s.done = true; s.el.classList.add("ok"); s.el.classList.remove("next", "near");
       s.el.textContent = s.value;
-      if (this.q?.latin){ s.el.classList.add("latin"); s.el.style.fontSize = Math.round(24 * this.scale) + "px"; }
+      if (this.q?.latin || this.q?.cardClass === "latin"){ s.el.classList.add("latin"); s.el.style.fontSize = Math.round(24 * this.scale) + "px"; }
+      else if (this.q?.cardClass === "letter" || this.q?.write){ s.el.style.fontSize = Math.round(44 * this.scale) + "px"; }
       else s.el.style.fontSize = Math.round(Math.min(30, fontFor(s.value)) * this.scale) + "px";
     }
     confetti(n = 36){
@@ -154,6 +175,7 @@ window.Arena = (() => {
       if (this.busy) return; this.busy = true; clearInterval(this.timer);
       this.slots.forEach(s => { if (!s.done){ this.fill(s); s.el.classList.add("missed"); } });
       if (this.q.reveal) this.pLabel.textContent = this.q.reveal;
+      if (this.pad && this.q.write) this.pad.showAnswer(this.q.write.target);
       this.cards.forEach(c => c.el.classList.add("pop"));
       this.streak = 0;
       this.goNext(delay);
@@ -326,6 +348,20 @@ window.Arena = (() => {
       this.vbar.classList.remove("shake"); void this.vbar.offsetWidth; this.vbar.classList.add("shake");
       Voice.reset();
     }
+    checkWrite(p){
+      if (this.busy || this.finished) return;
+      const w = this.q.write; if (!w) return;
+      const th = { easy:.5, medium:.56, hard:.62 }[opt.level] || .56;
+      const r = p.judge(w.target, w.others || [], th);
+      if (r.empty){ p.el.classList.remove("bad"); void p.el.offsetWidth; p.el.classList.add("bad"); return; }
+      if (r.ok){ p.el.classList.add("ok"); p.showAnswer(w.target); this.correctVoice(); }
+      else {
+        this.streak = 0; Sfx.wrong();
+        p.el.classList.remove("bad"); void p.el.offsetWidth; p.el.classList.add("bad");
+        p.showAnswer(w.target);
+        setTimeout(() => { if (!this.busy && this.q.write === w){ p.clear(); p.setGuide(w.guide ? w.target : "", true); } }, 1400);
+      }
+    }
     correctVoice(){
       const fake = { x:this.w / 2 - 40, y:H * .55, w:80, h:0, el:document.createElement("div") };
       const left = this.slots.filter(s => !s.done);
@@ -404,7 +440,7 @@ window.Arena = (() => {
   }
 
   function onDown(e){
-    if (e.target.closest("button")) return;
+    if (e.target.closest("button, .pad")) return;
     const s = opt.control === "shoot";
     touch[e.pointerId] = { id:"T" + e.pointerId, x:e.clientX, y:e.clientY, pinching:!s, shot:s };
   }
@@ -418,14 +454,14 @@ window.Arena = (() => {
     a.addEventListener("pointerdown", onDown); a.addEventListener("pointermove", onMove);
     a.addEventListener("pointerup", onUp); a.addEventListener("pointercancel", onUp);
     addEventListener("resize", resize);
-    const noCam = opt.control === "touch" || opt.control === "voice" || opt.noCam;
+    const noCam = ["touch", "voice", "write"].includes(opt.control) || opt.noCam;
     $("#cam").style.display = noCam ? "none" : "";
     a.classList.toggle("nocam", noCam);
 
     try {
       msg("Memuat ayat", "<p>Mengambil teks ayat. Surat atau juz yang baru pertama kali dipilih butuh internet dan sedikit lebih lama.</p>");
       if (opt.questions) qs = opt.questions;
-      else { const verses = await Quran.load(opt.pick); qs = Questions.build(opt.mode, verses, +opt.rounds, opt.names, opt.level); }
+      else qs = await Questions.make(opt);
       if (!qs.length) throw Object.assign(new Error(), { name:"NO_Q" });
     } catch(e){
       msg("Ayat belum bisa dimuat", e.name === "NO_Q"
@@ -441,7 +477,7 @@ window.Arena = (() => {
       $("#msgBtn2").onclick = () => { stop(); opt.onExit(); };
       return;
     }
-    if (opt.control !== "touch" && opt.control !== "voice" && !opt.noCam){
+    if (!["touch", "voice", "write"].includes(opt.control) && !opt.noCam){
       try {
         msg("Menyalakan kamera", "<p>Izinkan akses kamera saat browser bertanya. Memuat pendeteksi tangan, tunggu sebentar.</p>");
         await Gesture.start($("#cam"), { numHands: local2() ? 2 : 1 });

@@ -116,3 +116,10 @@ window.Questions = (() => {
 
   return { build, LV };
 })();
+
+// satu pintu untuk semua jenis soal
+Questions.make = async o => {
+  if (o.mode === "hijaiyah") return Hijaiyah.build(o);
+  const verses = await Quran.load(o.pick);
+  return Questions.build(o.mode, verses, +o.rounds, o.names, o.level);
+};

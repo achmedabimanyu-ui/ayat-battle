@@ -123,14 +123,43 @@ window.MODES = [
   { id:"susun",    icon:"i-build", name:"Susun ayat",     desc:"Susun potongan ayat yang diacak" },
   { id:"sambung",  icon:"i-link",  name:"Sambung ayat",   desc:"Pilih lanjutan dari awal ayat" },
   { id:"lanjutkan",icon:"i-next",  name:"Lanjutkan ayat", desc:"Pilih ayat sesudahnya" },
-  { id:"tebak",    icon:"i-quiz",  name:"Tebak surat",    desc:"Tebak surat dari ayatnya" }
+  { id:"tebak",    icon:"i-quiz",  name:"Tebak surat",    desc:"Tebak surat dari ayatnya" },
+  { id:"hijaiyah", icon:"i-hij",   name:"Hijaiyah",       desc:"Huruf, harakat, dan kata Al-Qur'an" }
 ];
+
+// Materi hijaiyah (tahapan umum belajar membaca Al-Qur'an)
+window.MATERI = [
+  { id:"huruf",   icon:"i-hij",   name:"Huruf satuan",  desc:"Kenali bentuk dan nama huruf" },
+  { id:"sambung", icon:"i-link",  name:"Huruf sambung", desc:"Huruf di awal, tengah, akhir kata" },
+  { id:"harakat", icon:"i-quiz",  name:"Berharakat",    desc:"Fathah, kasrah, dhammah, tanwin" },
+  { id:"kata",    icon:"i-build", name:"Kata Al-Qur'an",desc:"Dengar dan baca kata dari Al-Qur'an" }
+];
+window.TAHAP = [
+  { id:1, name:"Tahap 1: harakat (fathah, kasrah, dhammah)" },
+  { id:2, name:"Tahap 2: + tanwin" },
+  { id:3, name:"Tahap 3: + bacaan panjang (mad)" },
+  { id:4, name:"Tahap 4: + sukun dan alif lam" },
+  { id:5, name:"Tahap 5: + tasydid, semua bacaan" }
+];
+
+// [huruf, nama, bunyi konsonan, tebal, menyambung ke kiri]
+window.HIJAIYAH = [
+  ["ا","Alif","",0,0],["ب","Ba","b",0,1],["ت","Ta","t",0,1],["ث","Tsa","ts",0,1],["ج","Jim","j",0,1],
+  ["ح","Ḥa","ḥ",0,1],["خ","Kho","kh",1,1],["د","Dal","d",0,0],["ذ","Dzal","dz",0,0],["ر","Ro","r",1,0],
+  ["ز","Za","z",0,0],["س","Sin","s",0,1],["ش","Syin","sy",0,1],["ص","Shod","sh",1,1],["ض","Dhod","dh",1,1],
+  ["ط","Tho","th",1,1],["ظ","Zho","zh",1,1],["ع","'Ain","'",0,1],["غ","Ghoin","gh",1,1],["ف","Fa","f",0,1],
+  ["ق","Qof","q",1,1],["ك","Kaf","k",0,1],["ل","Lam","l",0,1],["م","Mim","m",0,1],["ن","Nun","n",0,1],
+  ["و","Wau","w",0,0],["ه","Ha","h",0,1],["ء","Hamzah","'",0,0],["ي","Ya","y",0,1]
+].map(([ch, name, c, heavy, joins]) => ({ ch, name, c, heavy:!!heavy, joins:!!joins }));
+// huruf yang bentuknya mirip, beda titik (untuk level sulit)
+window.HIJ_MIRIP = [["ب","ت","ث","ن","ي"],["ج","ح","خ"],["د","ذ"],["ر","ز"],["س","ش"],["ص","ض"],["ط","ظ"],["ع","غ"],["ف","ق"]];
 
 window.CONTROLS = [
   { id:"pinch", icon:"i-pinch", name:"Jepit",  desc:"Pakai kamera, jepit dan seret" },
   { id:"shoot", icon:"i-aim",   name:"Tembak", desc:"Pakai kamera, bidik dan tembak" },
   { id:"touch", icon:"i-tap",   name:"Sentuh", desc:"Tanpa kamera, ketuk kartu" },
-  { id:"voice", icon:"i-mic",   name:"Suara",  desc:"Jawab dengan membaca ayat" }
+  { id:"voice", icon:"i-mic",   name:"Suara",  desc:"Jawab dengan membaca ayat" },
+  { id:"write", icon:"i-pen",   name:"Tulis",  desc:"Tulis hurufnya di layar" }
 ];
 
 window.LEVELS = {
