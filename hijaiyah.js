@@ -5,6 +5,9 @@ window.Hijaiyah = (() => {
   const pick = a => a[Math.random() * a.length | 0];
   const OPTS = { easy:2, medium:3, hard:4 };
   const byCh = ch => HIJAIYAH.find(h => h.ch === ch);
+  const rid = h => "h" + String(HIJAIYAH.indexOf(h)).padStart(2, "0");            // rekaman nama huruf
+  const sid = (h, v) => rid(h).replace("h", "s") + "-" + v;                          // rekaman bunyi berharakat
+  const rec = key => (window.Rec && Rec.has(key)) ? { rec:key } : null;
   const twinsOf = ch => (HIJ_MIRIP.find(g => g.includes(ch)) || []).filter(x => x !== ch);
   const clash = (a, b) => (a === "ح" && b === "ه") || (a === "ه" && b === "ح");   // nama "Ha" mirip
 
@@ -118,16 +121,18 @@ window.Hijaiyah = (() => {
         const h = pool[i % pool.length];
         if (write){
           qs.push({ label:"Tulis huruf ini", prompt:h.name, promptClass:"big-latin", slots:[h.ch], cards:[],
+                    playStart:rec(rid(h)), hint:rec(rid(h)),
                     write:{ target:h.ch, guide: level === "easy", show: level !== "hard", others:wrongLetters(h.ch, "hard") },
                     reveal:`${h.ch}  ${h.name}` });
           continue;
         }
         if (i % 2 === 0){
           qs.push({ label:"Mana huruf ini?", prompt:h.name, promptClass:"big-latin", slots:[h.ch],
+                    playStart:rec(rid(h)), hint:rec(rid(h)),
                     cards:shuffle([h.ch, ...wrongLetters(h.ch, level)]), cardClass:"letter", reveal:`${h.name}` });
         } else {
           const names = wrongLetters(h.ch, level).map(c => byCh(c).name);
-          qs.push({ label:"Apa nama huruf ini?", prompt:h.ch, promptClass:"big-hij", slots:[h.name],
+          qs.push({ label:"Apa nama huruf ini?", prompt:h.ch, promptClass:"big-hij", slots:[h.name], playEnd:rec(rid(h)),
                     cards:shuffle([h.name, ...names]), cardClass:"latin" });
         }
       }
@@ -138,7 +143,7 @@ window.Hijaiyah = (() => {
       const items = shuffle(HIJAIYAH.flatMap(h => forms(h).map(f => ({ h, ...f }))));
       for (let i = 0; i < rounds; i++){
         const it = items[i % items.length];
-        const base = { label:`Huruf apa ini? (${it.pos} kata)`, prompt:it.txt, promptClass:"big-hij", slots:[it.h.ch], reveal:`${it.h.ch}  ${it.h.name}` };
+        const base = { label:`Huruf apa ini? (${it.pos} kata)`, prompt:it.txt, promptClass:"big-hij", slots:[it.h.ch], reveal:`${it.h.ch}  ${it.h.name}`, playEnd:rec(rid(it.h)) };
         if (write) qs.push({ ...base, label:`Tulis huruf aslinya (${it.pos} kata)`, cards:[], write:{ target:it.h.ch, guide: level === "easy", show:true, others:wrongLetters(it.h.ch, "hard") } });
         else qs.push({ ...base, cards:shuffle([it.h.ch, ...wrongLetters(it.h.ch, level, HIJAIYAH.filter(x => x.ch !== "ء").map(x => x.ch))]), cardClass:"letter" });
       }
@@ -149,7 +154,7 @@ window.Hijaiyah = (() => {
       const vowels = level === "easy" ? ["a","i","u"] : level === "medium" ? ["a","i","u","an","in","un"] : ["a","i","u","an","in","un"];
       const letterPool = HIJAIYAH.filter(h => h.ch !== "ء");
       for (let i = 0; i < rounds; i++){
-        const h = pick(letterPool), v = pick(vowels), ans = { g:glyph(h, v), s:syllable(h, v) };
+        const h = pick(letterPool), v = pick(vowels), ans = { g:glyph(h, v), s:syllable(h, v) }, snd = rec(sid(h, v));
         let wrong;
         if (level === "hard"){
           const tw = twinsOf(h.ch).map(byCh).filter(Boolean);
@@ -164,10 +169,10 @@ window.Hijaiyah = (() => {
         const seen = new Set([ans.s]); wrong = wrong.filter(w => !seen.has(w.s) && seen.add(w.s)).slice(0, n - 1);
         if (i % 2 === 0)
           qs.push({ label:"Bagaimana bacaannya?", prompt:ans.g, promptClass:"big-hij", slots:[ans.s],
-                    cards:shuffle([ans.s, ...wrong.map(w => w.s)]), cardClass:"latin" });
+                    cards:shuffle([ans.s, ...wrong.map(w => w.s)]), cardClass:"latin", playEnd:snd });
         else
-          qs.push({ label:`Mana yang dibaca "${ans.s}"?`, prompt:ans.s, promptClass:"big-latin", slots:[ans.g],
-                    cards:shuffle([ans.g, ...wrong.map(w => w.g)]), cardClass:"letter" });
+          qs.push({ label: snd ? "Dengarkan, mana bacaannya?" : `Mana yang dibaca "${ans.s}"?`, prompt:ans.s, promptClass:"big-latin", slots:[ans.g],
+                    cards:shuffle([ans.g, ...wrong.map(w => w.g)]), cardClass:"letter", playStart:snd, hint:snd, playEnd:snd });
       }
       return qs;
     }
@@ -208,5 +213,5 @@ window.Hijaiyah = (() => {
     });
   }
 
-  return { build, tahapOf, featuresOf, syllable, glyph };
+  return { build, tahapOf, featuresOf, syllable, glyph, rid, sid };
 })();

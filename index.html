@@ -152,6 +152,7 @@
         <select id="tahapSel"></select>
         <small class="field-note">Kata diambil dari surat atau juz yang dipilih di langkah 1, lengkap dengan suara qari per kata.</small>
       </label>
+      <p class="field-note" id="recHint" style="margin-top:10px">Suara huruf dan harakat memakai rekaman ustadz/ustadzah. <a href="#" id="recHintLink">Rekam di Studio suara</a>.</p>
     </div>
 
     <div class="panel">
@@ -189,6 +190,40 @@
       <p><b>Mudah</b>: 2 pilihan yang jelas berbeda. <b>Sedang</b>: 3 pilihan. <b>Sulit</b>: 4 pilihan yang mirip satu sama lain (mutasyabihat), ada satu kartu jebakan di susun ayat, dan ayat tidak dibacakan otomatis.</p>
       <h3>Poin</h3>
       <p>Jawaban benar dapat 10 poin, ditambah bonus kalau cepat dan beruntun. Salah tidak mengurangi poin, jadi coba terus.</p>
+    </div>
+  </section>
+
+  <!-- STUDIO SUARA -->
+  <section class="screen" id="studio">
+    <header class="bar">
+      <button class="round sm" data-go="home" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <h2 class="board">Studio suara</h2>
+      <span class="spacer"></span>
+    </header>
+    <div class="panel">
+      <div class="tabs" role="tablist">
+        <button class="tab" data-st="huruf" role="tab">Nama huruf</button>
+        <button class="tab" data-st="harakat" role="tab">Berharakat</button>
+      </div>
+      <div class="chips" id="stVowels"></div>
+      <div class="rec-card">
+        <div class="rec-show"><span class="rec-big" id="recBig" dir="rtl">ب</span><b id="recLatin">Ba</b></div>
+        <div class="rec-actions">
+          <button class="rec-btn" id="recBtn" aria-label="Rekam"><svg viewBox="0 0 48 48"><use href="#i-mic"/></svg></button>
+          <button class="chip" id="recPlay">Putar</button>
+          <button class="chip" id="recDel">Hapus</button>
+          <button class="chip" id="recNext">Berikutnya</button>
+        </div>
+        <p class="rec-status" id="recStatus">Tekan tombol merah, lalu bacakan. Rekaman berhenti otomatis setelah 3 detik.</p>
+        <label class="rec-auto"><input type="checkbox" id="recAuto" checked> Otomatis pindah ke huruf berikutnya</label>
+      </div>
+      <div class="surah-grid rec-grid" id="recGrid"></div>
+      <p class="count" id="recCount"></p>
+    </div>
+    <div class="panel prose">
+      <h3>Supaya terdengar di semua perangkat</h3>
+      <p>Rekaman tersimpan di perangkat ini dan langsung dipakai di game. Agar perangkat lain ikut mendengar, tekan tombol di bawah untuk mengunduh folder <b>audio</b>, ekstrak, lalu unggah folder itu ke repository GitHub (Add file, Upload files, seret folder audio).</p>
+      <div class="start-wrap"><button class="plank moss" id="recExport">Unduh folder audio</button></div>
     </div>
   </section>
 
@@ -233,6 +268,17 @@
     <canvas id="fx"></canvas>
     <div class="watermark" aria-hidden="true"><img src="logo-elkisai.png" alt=""><span>Ayat Battle<b>@elkisai.education</b></span></div>
     <button class="round sm arena-back" id="arenaBack" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+    <button class="round sm arena-pause" id="arenaPause" aria-label="Jeda"><svg viewBox="0 0 24 24"><use href="#i-pause"/></svg></button>
+    <div class="pause-ov" id="pauseOv" hidden>
+      <div class="modal-card">
+        <h2 class="board">Jeda</h2>
+        <p class="pause-note" id="pauseNote">Permainan dihentikan sementara.</p>
+        <div class="msg-actions">
+          <button class="plank wood" id="btnResume">Lanjutkan</button>
+          <button class="plank stone" id="btnPauseMenu">Menu</button>
+        </div>
+      </div>
+    </div>
     <div class="arena-msg" id="arenaMsg" hidden>
       <div class="modal-card">
         <h2 class="board" id="msgTitle">Menyalakan kamera</h2>
@@ -278,6 +324,7 @@
         <option>5</option><option>10</option><option>15</option>
       </select>
     </label>
+    <button class="chip studio-link" id="openStudio">Rekam suara huruf hijaiyah</button>
     <div class="modal-actions">
       <button class="round" data-close aria-label="Tutup"><svg viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
       <button class="round" id="saveSettings" aria-label="Simpan"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></button>
@@ -293,6 +340,8 @@
   <symbol id="i-mute" viewBox="0 0 24 24"><path fill="currentColor" d="M3 9h4l5-4v14l-5-4H3z"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
   <symbol id="i-help" viewBox="0 0 24 24"><path d="M8.5 9a3.5 3.5 0 1 1 5 3.2c-1 .5-1.5 1.2-1.5 2.3V15" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="round"/><circle cx="12" cy="19.3" r="1.7" fill="currentColor"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5l-7 7 7 7" stroke="currentColor" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.2" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-pinch" viewBox="0 0 48 48"><path d="M18 30V14a3 3 0 0 1 6 0v10M24 22V10a3 3 0 0 1 6 0v14M30 22v-4a3 3 0 0 1 6 0v12c0 7-5 12-12 12h-2c-5 0-8-3-10-7l-4-7a3 3 0 0 1 5-3l3 4" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -315,6 +364,7 @@
 <script src="questions.js"></script>
 <script src="voice.js"></script>
 <script src="sfx.js"></script>
+<script src="rec.js"></script>
 <script src="hijaiyah.js"></script>
 <script src="draw.js"></script>
 <script src="arena.js"></script>

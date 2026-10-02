@@ -192,6 +192,7 @@
     $("#roomNote").textContent = "Menyiapkan soal...";
     try {
       const o = gameOpts();
+      await Rec.init();
       const questions = await Questions.make(o);
       if (!questions.length) throw new Error();
       const payload = { questions, mode:o.mode, time:o.time, startAt:Date.now() + 3500 };
@@ -218,6 +219,72 @@
     Arena.stop();
     if (inGame){ inGame = false; Online.leave(); go("home"); } else go("setup");
   };
+
+  // ---------- STUDIO SUARA ----------
+  const ST = { tab:"huruf", vowel:"a", i:1 };
+  const VOWELS = [["a","Fathah"],["i","Kasrah"],["u","Dhammah"],["an","Fathatain"],["in","Kasratain"],["un","Dhammatain"]];
+  const stItems = () => HIJAIYAH.filter(h => ST.tab === "huruf" || h.ch !== "ء");
+  const stKey = h => ST.tab === "huruf" ? Hijaiyah.rid(h) : Hijaiyah.sid(h, ST.vowel);
+  const stShow = h => ST.tab === "huruf" ? { big:h.ch, lat:h.name } : { big:Hijaiyah.glyph(h, ST.vowel), lat:Hijaiyah.syllable(h, ST.vowel) };
+  const recAudio = new Audio();
+  async function openStudio(){
+    await Rec.init();
+    go("studio"); renderStudio();
+  }
+  function renderStudio(){
+    $$("#studio .tab").forEach(t => t.setAttribute("aria-selected", t.dataset.st === ST.tab));
+    $("#stVowels").innerHTML = ST.tab === "harakat"
+      ? VOWELS.map(([v, n]) => `<button class="chip${v === ST.vowel ? " on" : ""}" data-v="${v}">${n}</button>`).join("") : "";
+    const items = stItems();
+    ST.i = Math.min(ST.i, items.length - 1);
+    $("#recGrid").innerHTML = items.map((h, i) => {
+      const k = stKey(h), d = stShow(h);
+      const st = Rec.isLocal(k) ? "local" : Rec.isRepo(k) ? "repo" : "";
+      return `<button class="surah rec-item ${st}${i === ST.i ? " cur" : ""}" data-i="${i}"><span class="ri-ar" dir="rtl">${d.big}</span><small>${d.lat}</small></button>`;
+    }).join("");
+    const h = items[ST.i], d = stShow(h);
+    $("#recBig").textContent = d.big; $("#recLatin").textContent = d.lat;
+    const total = items.length, done = items.filter(x => Rec.has(stKey(x))).length;
+    $("#recCount").textContent = `${done} dari ${total} sudah direkam`;
+    $("#recPlay").disabled = $("#recDel").disabled = !Rec.has(stKey(h));
+  }
+  $$("#studio .tab").forEach(t => t.onclick = () => { ST.tab = t.dataset.st; ST.i = 0; renderStudio(); });
+  $("#stVowels").onclick = e => { const b = e.target.closest("[data-v]"); if (!b) return; ST.vowel = b.dataset.v; renderStudio(); };
+  $("#recGrid").onclick = e => { const b = e.target.closest(".rec-item"); if (!b) return; ST.i = +b.dataset.i; renderStudio(); };
+  $("#recNext").onclick = () => { ST.i = (ST.i + 1) % stItems().length; renderStudio(); };
+  $("#recPlay").onclick = () => { const u = Rec.url(stKey(stItems()[ST.i])); if (u){ recAudio.src = u; recAudio.play().catch(() => {}); } };
+  $("#recDel").onclick = async () => { await Rec.del(stKey(stItems()[ST.i])); renderStudio(); };
+  let recording = false;
+  $("#recBtn").onclick = async () => {
+    if (recording){ Rec.stopRec(); return; }
+    const h = stItems()[ST.i], key = stKey(h);
+    try {
+      recording = true; $("#recBtn").classList.add("on");
+      $("#recStatus").textContent = "Merekam... bacakan sekarang. Tekan lagi untuk berhenti.";
+      const blob = await Rec.record(3000);
+      recording = false; $("#recBtn").classList.remove("on");
+      if (blob.size < 1500){ $("#recStatus").textContent = "Rekaman terlalu pendek, coba lagi."; return; }
+      await Rec.save(key, blob);
+      $("#recStatus").textContent = `Tersimpan: ${stShow(h).lat}`;
+      recAudio.src = Rec.url(key); recAudio.play().catch(() => {});
+      if ($("#recAuto").checked) ST.i = (ST.i + 1) % stItems().length;
+      renderStudio();
+    } catch(e){
+      recording = false; $("#recBtn").classList.remove("on");
+      $("#recStatus").textContent = e.name === "NotAllowedError"
+        ? "Izin mikrofon ditolak. Ketuk ikon gembok di samping alamat web, izinkan Mikrofon."
+        : "Mikrofon tidak bisa dipakai di perangkat ini.";
+    }
+  };
+  $("#recExport").onclick = async () => {
+    $("#recExport").disabled = true; $("#recExport").textContent = "Menyiapkan...";
+    try { await Rec.exportZip(); } catch(e){ alert("Gagal membuat file. Periksa internet lalu coba lagi."); }
+    $("#recExport").disabled = false; $("#recExport").textContent = "Unduh folder audio";
+  };
+  $("#openStudio").onclick = () => { $("#settings").hidden = true; openStudio(); };
+  $("#recHintLink").onclick = e => { e.preventDefault(); openStudio(); };
+  // hentikan mikrofon saat keluar dari studio
+  $$("#studio [data-go]").forEach(b => b.addEventListener("click", () => Rec.release()));
 
   // ---------- SETTINGS ----------
   $("#setQari").innerHTML = QARIS.map(q => `<option value="${q.id}">${q.name}</option>`).join("");

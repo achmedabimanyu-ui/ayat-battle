@@ -26,7 +26,9 @@ window.Arena = (() => {
         const v = speechSynthesis.getVoices().find(x => x.lang?.startsWith("ar")); if (v) u.voice = v;
         speechSynthesis.speak(u); return;
       }
-      audio.pause(); audio.src = ref.url || Quran.audioUrl(opt.qari, ref[0], ref[1]);
+      const src = ref.rec ? Rec.url(ref.rec) : ref.url || Quran.audioUrl(opt.qari, ref[0], ref[1]);
+      if (!src) return;
+      audio.pause(); audio.src = src;
       if (voiceMode() && Voice.active) Voice.hold(true);
       audio.play().catch(() => { if (voiceMode()) Voice.hold(false); });
     } catch(e){}
@@ -487,6 +489,7 @@ window.Arena = (() => {
 
     try {
       msg("Memuat ayat", "<p>Mengambil teks ayat. Surat atau juz yang baru pertama kali dipilih butuh internet dan sedikit lebih lama.</p>");
+      if (window.Rec) await Rec.init();
       if (opt.questions) qs = opt.questions;
       else qs = await Questions.make(opt);
       if (!qs.length) throw Object.assign(new Error(), { name:"NO_Q" });
