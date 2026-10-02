@@ -101,7 +101,7 @@
       <p><b>Lanjutkan ayat</b>: dengarkan satu ayat, lalu pilih ayat sesudahnya.</p>
       <h3>Cara main</h3>
       <p><b>Jepit</b>: rapatkan telunjuk dan jempol untuk mengambil kartu, buka jari untuk melepas.</p>
-      <p><b>Tembak</b>: arahkan telunjuk ke kartu, tekuk jempol untuk menembak.</p>
+      <p><b>Tembak</b>: bentuk pistol jari, arahkan telunjuk ke kartu, lalu turunkan jempol. Bisa juga tahan bidikan di kartu sampai cincinnya penuh.</p>
       <p><b>Sentuh</b>: ketuk atau klik kartu, tanpa kamera.</p>
       <h3>Poin</h3>
       <p>Jawaban benar dapat 10 poin, ditambah bonus kalau cepat dan beruntun. Salah tidak mengurangi poin, jadi coba terus.</p>
@@ -145,25 +145,9 @@
   <!-- ARENA -->
   <section class="screen" id="arena">
     <video id="cam" playsinline muted></video>
+    <div id="boards"></div>
     <canvas id="fx"></canvas>
-    <div class="stage" id="stage">
-      <div class="prompt" id="prompt" hidden>
-        <div class="prompt-head"><span id="promptLabel"></span>
-          <button class="listen" id="btnListen" aria-label="Dengarkan ayat"><svg viewBox="0 0 24 24"><use href="#i-sound"/></svg>Dengar</button>
-        </div>
-        <p class="ar" id="promptText" dir="rtl"></p>
-      </div>
-      <div class="slots" id="slots" dir="rtl"></div>
-    </div>
-    <div id="cards"></div>
-    <div id="floaters"></div>
-    <header class="hud">
-      <button class="round sm" id="arenaBack" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
-      <div class="hud-box" id="hudP1"><small>Poin</small><b>0</b></div>
-      <div class="hud-box p2" id="hudP2" hidden><small>Pemain 2</small><b>0</b></div>
-      <div class="hud-box status" id="hudStatus"><small>Soal</small><b>1/10</b></div>
-      <div class="hud-box" id="hudTime" hidden><small>Waktu</small><b>30</b></div>
-    </header>
+    <button class="round sm arena-back" id="arenaBack" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
     <div class="arena-msg" id="arenaMsg" hidden>
       <div class="modal-card">
         <h2 class="board" id="msgTitle">Menyalakan kamera</h2>

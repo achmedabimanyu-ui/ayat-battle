@@ -205,3 +205,26 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .lobby-note{font-size:14px;line-height:1.5;opacity:.85;margin-top:8px}
 .countdown{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(40,20,5,.55);font-family:var(--font-ui);font-size:160px;color:var(--gold);-webkit-text-stroke:6px var(--ink);paint-order:stroke fill}
 .countdown[hidden]{display:none}
+
+/* SPLIT BOARDS */
+#boards{position:absolute;inset:0;z-index:2}
+.barea{position:absolute;top:0;bottom:0;overflow:hidden}
+.barea + .barea{border-left:4px solid var(--ink);box-shadow:-3px 0 0 var(--gold)}
+.barea.ghost{background:rgba(22,44,88,.55)}
+.barea .layer{position:absolute;inset:0}
+.bhud{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);left:0;right:0;z-index:5;display:flex;justify-content:center;gap:6px;padding:0 10px 0 70px;pointer-events:none}
+.barea + .barea .bhud{padding-left:10px}
+.bhud .hud-box{padding:2px 12px 4px}
+.bhud .hud-box b{font-size:20px}
+.bhud .who{background:var(--wood)}
+.barea.p2 .bhud .who{background:#2f5f9e;box-shadow:0 4px 0 #1b3a66}
+.barea .stage{top:calc(env(safe-area-inset-top,0px) + 70px)}
+.barea.narrow .prompt p.ar{font-size:clamp(20px,2.6vw,30px)}
+.barea.narrow .slot{min-width:80px;min-height:54px}
+.barea.narrow .slot.wide{min-width:90%}
+.barea .card{max-width:92%}
+.wait-note{position:absolute;inset:0;z-index:6;display:grid;place-items:center;text-align:center;padding:20px;font-family:var(--font-ui);font-size:26px;color:var(--cream);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;background:rgba(40,20,5,.45)}
+.ghost-cursor{position:absolute;z-index:6;width:30px;height:30px;margin:-15px 0 0 -15px;border:4px solid #5aa9ff;border-radius:50%;pointer-events:none;transition:left .1s linear,top .1s linear}
+.ghost-cursor.pinch{width:18px;height:18px;margin:-9px 0 0 -9px;background:#5aa9ff}
+.ghost-card{transition:transform .1s linear}
+.arena-back{position:absolute;left:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:9}

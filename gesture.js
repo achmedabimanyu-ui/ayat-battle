@@ -62,35 +62,42 @@ window.Gesture = (() => {
     (res.landmarks || []).forEach((lm, i) => {
       const pts = lm.map(p => toScreen(p, W, H));
       const size = dist(lm[0], lm[9]) || 1;                  // ukuran telapak, supaya jarak tidak tergantung jauh-dekat
+      const d0 = i => dist(lm[i], lm[0]);
       const pinchD = dist(lm[4], lm[8]) / size;             // jempol ke telunjuk
-      const thumbD = dist(lm[4], lm[5]) / size;             // jempol ke pangkal telunjuk (pistol jari)
-      const indexOut = dist(lm[8], lm[0]) > dist(lm[6], lm[0]) * 1.1;
-      const curled = dist(lm[12], lm[0]) < dist(lm[10], lm[0]) * 1.05;
+      const thumbD = Math.min(dist(lm[4], lm[5]), dist(lm[4], lm[6])) / size; // jempol ke sisi telunjuk
 
       // id stabil: berdasarkan sisi layar (kiri/kanan) supaya cocok untuk duel satu layar
       const mid = (pts[0].x + pts[9].x) / 2;
-      const id = res.landmarks.length > 1 ? (mid < W / 2 ? "L" : "R") : "L";
-      const m = memory[id] ||= { pinch:false, cocked:false, lastShot:0, sx:null, sy:null };
+      const id = res.landmarks.length > 1 ? (mid < W / 2 ? "L" : "R") : (mid < W / 2 ? "L" : "R");
+      const m = memory[id] ||= { pinch:false, lastShot:0, sx:null, sy:null, th:[], hist:[] };
 
       // JEPIT dengan hysteresis (tidak berkedip-kedip)
       if (!m.pinch && pinchD < .32) m.pinch = true;
       else if (m.pinch && pinchD > .48) m.pinch = false;
 
-      // TEMBAK: telunjuk lurus, jari tengah menekuk, jempol tegak lalu ditekuk
-      const aiming = indexOut && curled;
+      // BIDIK: telunjuk lurus, minimal satu dari jari tengah/manis menekuk (lebih longgar dari sebelumnya)
+      const indexOut = d0(8) > d0(6) * 1.05;
+      const curled = (d0(12) < d0(10) * 1.12) || (d0(16) < d0(14) * 1.12);
+      const aiming = indexOut && curled && pinchD > .35;
+
+      // TEMBAK adaptif: jempol turun cukup jauh dari posisi tertingginya dalam 0,4 detik terakhir
       let shot = false;
       if (aiming){
-        if (thumbD > .55) m.cocked = true;
-        else if (m.cocked && thumbD < .35 && ts - m.lastShot > 450){ shot = true; m.cocked = false; m.lastShot = ts; }
-      } else m.cocked = false;
+        m.th.push([ts, thumbD]); m.th = m.th.filter(x => ts - x[0] < 400);
+        const peak = Math.max(...m.th.map(x => x[1]));
+        if (peak - thumbD > .2 && thumbD < .5 && ts - m.lastShot > 380){ shot = true; m.lastShot = ts; m.th = []; }
+      } else m.th = [];
 
-      // Titik kendali: tengah jepitan, atau ujung telunjuk saat membidik. Diperhalus.
+      // Titik kendali: ujung telunjuk saat membidik, tengah jepitan saat menjepit. Diperhalus.
       const raw = aiming ? pts[8] : { x:(pts[4].x + pts[8].x) / 2, y:(pts[4].y + pts[8].y) / 2 };
-      const k = .45;
+      const k = aiming ? .35 : .45;
       m.sx = m.sx == null ? raw.x : m.sx + (raw.x - m.sx) * k;
       m.sy = m.sy == null ? raw.y : m.sy + (raw.y - m.sy) * k;
+      m.hist.push([ts, m.sx, m.sy]); m.hist = m.hist.filter(x => ts - x[0] < 400);
+      // posisi tembak = posisi bidikan ~150 ms sebelumnya (sebelum jempol menggeser tangan)
+      const back = m.hist.find(x => ts - x[0] <= 150) || m.hist[m.hist.length - 1];
 
-      hands.push({ id, x:m.sx, y:m.sy, pinching:m.pinch, shot, aiming, pts });
+      hands.push({ id, x:m.sx, y:m.sy, pinching:m.pinch, shot, aiming, fx:back[1], fy:back[2], hand:true, pts });
     });
     return hands;
   }
