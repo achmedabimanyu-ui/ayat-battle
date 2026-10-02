@@ -483,3 +483,5 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .pad.bad .pad-area{animation:shake .35s}
 .pad{width:min(380px,90%,max(170px,calc(100vh - 400px)))}
 .pad-area{max-height:none}
+/* papan tulis dinaikkan: berada tepat di bawah soal, bukan menempel ke bawah layar */
+.pad{bottom:auto;top:calc(env(safe-area-inset-top,0px) + var(--pad-top,300px))}

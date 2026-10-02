@@ -112,6 +112,14 @@ window.Arena = (() => {
       this.render();
       if (this.ghost) return;
       if (this.pad){
+        // taruh papan tepat di bawah kotak soal
+        requestAnimationFrame(() => {
+          const r = this.stage.getBoundingClientRect();
+          const room = innerHeight - r.bottom - 90;                   // sisa tinggi untuk papan + tombol
+          this.pad.el.style.setProperty("--pad-top", Math.round(r.bottom + 12) + "px");
+          this.pad.el.style.width = Math.round(Math.max(170, Math.min(380, this.w * .9, room))) + "px";
+          this.pad.resize();
+        });
         this.pad.clear(); this.pad.resize();
         const w = q.write || {};
         this.pad.setGuide(w.guide ? w.target : "", true);
