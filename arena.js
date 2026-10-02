@@ -469,9 +469,13 @@ window.Arena = (() => {
 
   async function start(options){
     opt = options; alive = true; touch = {}; Sfx.enabled = opt.sound !== false;
-    paused = false; $("#pauseOv").hidden = true;
-    $("#arenaPause").onclick = togglePause; $("#btnResume").onclick = () => setPaused(false);
-    $("#btnPauseMenu").onclick = () => { setPaused(false); stop(); opt.onExit(); };
+    paused = false;
+    safely(() => {
+      ensurePauseUI();
+      $("#pauseOv").hidden = true;
+      $("#arenaPause").onclick = togglePause; $("#btnResume").onclick = () => setPaused(false);
+      $("#btnPauseMenu").onclick = () => { setPaused(false); stop(); opt.onExit(); };
+    });
     $("#boards").innerHTML = ""; boards = []; ghost = null;
     const a = $("#arena");
     a.addEventListener("pointerdown", onDown); a.addEventListener("pointermove", onMove);
@@ -537,7 +541,28 @@ window.Arena = (() => {
     loop();
   }
 
+  // buat tombol & jendela jeda kalau index.html belum memilikinya (mis. versi lama masih di cache)
+  function ensurePauseUI(){
+    const arena = $("#arena");
+    if (!$("#arenaPause")){
+      const b = el("button", "round sm arena-pause", arena); b.id = "arenaPause"; b.setAttribute("aria-label", "Jeda");
+      b.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-pause"/></svg>';
+    }
+    if (!document.getElementById("i-pause")){
+      const defs = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      defs.setAttribute("width", "0"); defs.setAttribute("height", "0"); defs.style.position = "absolute";
+      defs.innerHTML = '<symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4.2" height="14" rx="1.2" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2" fill="currentColor"/></symbol>' +
+        '<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>';
+      document.body.appendChild(defs);
+    }
+    if (!$("#pauseOv")){
+      const ov = el("div", "pause-ov", arena); ov.id = "pauseOv"; ov.hidden = true;
+      ov.innerHTML = '<div class="modal-card"><h2 class="board">Jeda</h2><p class="pause-note" id="pauseNote"></p>' +
+        '<div class="msg-actions"><button class="plank wood" id="btnResume">Lanjutkan</button><button class="plank stone" id="btnPauseMenu">Menu</button></div></div>';
+    }
+  }
   function setPaused(v){
+    ensurePauseUI();
     if (!alive || $("#arenaMsg").hidden === false) v = false;
     paused = v;
     $("#pauseOv").hidden = !v;
@@ -562,7 +587,7 @@ window.Arena = (() => {
   }
 
   function stop(){
-    alive = false; paused = false; $("#pauseOv").hidden = true; cancelAnimationFrame(raf); audio.pause(); Gesture.stop(); Voice.stop(); pendingOpp = null;
+    alive = false; paused = false; const pov = $("#pauseOv"); if (pov) pov.hidden = true; cancelAnimationFrame(raf); audio.pause(); Gesture.stop(); Voice.stop(); pendingOpp = null;
     boards.forEach(b => b.destroy()); ghost?.destroy(); boards = []; ghost = null;
     removeEventListener("resize", resize);
     const a = $("#arena");
