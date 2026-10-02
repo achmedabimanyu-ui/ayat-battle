@@ -485,3 +485,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .pad-area{max-height:none}
 /* papan tulis dinaikkan: berada tepat di bawah soal, bukan menempel ke bawah layar */
 .pad{bottom:auto;top:calc(env(safe-area-inset-top,0px) + var(--pad-top,300px))}
+
+/* huruf hijaiyah: font dengan tinggi seimbang supaya huruf berada di tengah kotak */
+.prompt p.big-hij{font-family:"Noto Naskh Arabic",var(--font-ar);font-size:clamp(56px,9vw,96px);line-height:1.15;text-align:center;padding-bottom:.08em}
+.card.letter,.slot.ok.hij{font-family:"Noto Naskh Arabic",var(--font-ar);line-height:1.1;padding:10px 20px 14px;display:grid;place-items:center}
+.pad-guide{font-family:"Noto Naskh Arabic",var(--font-ar);line-height:1;padding-bottom:.12em}
+/* tombol Dengar menyala saat suara papan ini sedang diputar */
+.listen.playing{background:var(--moss);animation:pulse 1s ease-in-out infinite}

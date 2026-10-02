@@ -9,9 +9,16 @@ window.Arena = (() => {
   let opt, qs = [], boards = [], ghost = null, raf = 0, ctx, W, H, alive = false, touch = {};
   const audio = new Audio();
   const voiceMode = () => opt.control === "voice";
-  function play(ref){
+  let owner = null;                                   // papan yang sedang memutar suara
+  const busyAudio = () => !audio.paused && !audio.ended && audio.currentTime < (audio.duration || 99);
+  function play(ref, who, auto){
     try {
       if (!ref || !opt.sound) return;
+      // duel satu layar: suara otomatis tidak boleh memotong suara milik papan lain
+      if (auto && opt.play === "duel-local" && busyAudio() && owner && owner !== who) return;
+      owner?.listen?.classList.remove("playing");
+      owner = who || null;
+      owner?.listen?.classList.add("playing");
       if (ref.tts){                                   // huruf berharakat: suara bawaan perangkat
         if (!window.speechSynthesis) return;
         speechSynthesis.cancel();
@@ -24,6 +31,8 @@ window.Arena = (() => {
       audio.play().catch(() => { if (voiceMode()) Voice.hold(false); });
     } catch(e){}
   }
+  audio.addEventListener("ended", () => owner?.listen?.classList.remove("playing"));
+  audio.addEventListener("error", () => owner?.listen?.classList.remove("playing"));
   audio.onended = audio.onerror = () => { if (opt && voiceMode() && Voice.active) setTimeout(() => Voice.hold(false), 250); };
   const safely = fn => { try { fn(); } catch(e){ console.warn(e); } };
 
@@ -49,7 +58,7 @@ window.Arena = (() => {
       if (!ghost){
         const b = el("button", "listen", ph);
         b.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-sound"/></svg>Dengar';
-        b.onclick = () => play(this.q?.hint || this.q?.playStart);
+        b.onclick = () => play(this.q?.hint || this.q?.playStart || this.q?.playEnd, this);
         this.listen = b;
       }
       this.pText = el("p", "", this.prompt); this.pText.dir = "rtl";
@@ -129,8 +138,8 @@ window.Arena = (() => {
         Voice.reset(q.latin ? "id-ID" : "ar-SA");
         this.vHeard.textContent = "";
         this.voiceState(Voice.active ? "on" : "off");
-        if (q.prompt) play(q.playStart);   // susun: jangan bocorkan jawaban lewat audio
-      } else play(q.playStart);
+        if (q.prompt) play(q.playStart, this, true);   // susun: jangan bocorkan jawaban lewat audio
+      } else play(q.playStart, this, true);
       this.startTimer();
     }
     startTimer(){
@@ -146,7 +155,7 @@ window.Arena = (() => {
       s.done = true; s.el.classList.add("ok"); s.el.classList.remove("next", "near");
       s.el.textContent = s.value;
       if (this.q?.latin || this.q?.cardClass === "latin"){ s.el.classList.add("latin"); s.el.style.fontSize = Math.round(24 * this.scale) + "px"; }
-      else if (this.q?.cardClass === "letter" || this.q?.write){ s.el.style.fontSize = Math.round(44 * this.scale) + "px"; }
+      else if (this.q?.cardClass === "letter" || this.q?.write){ s.el.classList.add("hij"); s.el.style.fontSize = Math.round(44 * this.scale) + "px"; }
       else s.el.style.fontSize = Math.round(Math.min(30, fontFor(s.value)) * this.scale) + "px";
     }
     confetti(n = 36){
@@ -187,7 +196,7 @@ window.Arena = (() => {
       this.cards.forEach(c => c.el.classList.add("pop"));
       this.streak = 0;
       this.goNext(delay);
-      play(this.q.playEnd);
+      play(this.q.playEnd, this, true);
     }
     correct(c, s){
       this.fill(s); c.done = true; c.el.classList.add("pop");
@@ -215,7 +224,7 @@ window.Arena = (() => {
           setTimeout(() => k.remove(), 1100);
         } else Sfx.correct();
         if (opt.control === "shoot" && !done){ const n = this.slots.find(x => !x.done); if (n) n.el.classList.add("next"); }
-        if (done){ play(this.q.playEnd); this.confetti(); }
+        if (done){ play(this.q.playEnd, this, true); this.confetti(); }
       });
     }
     wrong(c){ Sfx.wrong(); c.el.classList.remove("wrong"); void c.el.offsetWidth; c.el.classList.add("wrong"); this.streak = 0; c.vy = 3; }

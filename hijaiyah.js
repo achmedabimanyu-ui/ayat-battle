@@ -40,7 +40,7 @@ window.Hijaiyah = (() => {
   }
 
   // ---------- kata Al-Qur'an ----------
-  const WKEY = "ab_words_v1";
+  const WKEY = "ab_words_v2";
   let wcache = {};
   try { wcache = JSON.parse(localStorage.getItem(WKEY) || "{}"); } catch(e){}
   const wsave = () => { try { localStorage.setItem(WKEY, JSON.stringify(wcache)); } catch(e){} };
@@ -54,7 +54,9 @@ window.Hijaiyah = (() => {
       total = j.pagination?.total_pages || 1;
       j.verses.forEach(v => v.words.forEach(w => {
         if (w.char_type_name !== "word" || !w.text_uthmani) return;
-        out.push([w.text_uthmani, w.audio_url || "", w.transliteration?.text || "", v.verse_key]);
+        const [vs, va] = v.verse_key.split(":").map(Number), p3 = n => String(n).padStart(3, "0");
+        const own = w.position ? `wbw/${p3(vs)}_${p3(va)}_${p3(w.position)}.mp3` : "";
+        out.push([w.text_uthmani, own || w.audio_url || "", w.transliteration?.text || "", v.verse_key]);
       }));
       page++;
     } while (page <= total && page < 40);
@@ -125,7 +127,7 @@ window.Hijaiyah = (() => {
                     cards:shuffle([h.ch, ...wrongLetters(h.ch, level)]), cardClass:"letter", reveal:`${h.name}` });
         } else {
           const names = wrongLetters(h.ch, level).map(c => byCh(c).name);
-          qs.push({ label:"Apa nama huruf ini?", prompt:h.ch, promptClass:"big-ar", slots:[h.name],
+          qs.push({ label:"Apa nama huruf ini?", prompt:h.ch, promptClass:"big-hij", slots:[h.name],
                     cards:shuffle([h.name, ...names]), cardClass:"latin" });
         }
       }
@@ -136,7 +138,7 @@ window.Hijaiyah = (() => {
       const items = shuffle(HIJAIYAH.flatMap(h => forms(h).map(f => ({ h, ...f }))));
       for (let i = 0; i < rounds; i++){
         const it = items[i % items.length];
-        const base = { label:`Huruf apa ini? (${it.pos} kata)`, prompt:it.txt, promptClass:"big-ar", slots:[it.h.ch], reveal:`${it.h.ch}  ${it.h.name}` };
+        const base = { label:`Huruf apa ini? (${it.pos} kata)`, prompt:it.txt, promptClass:"big-hij", slots:[it.h.ch], reveal:`${it.h.ch}  ${it.h.name}` };
         if (write) qs.push({ ...base, label:`Tulis huruf aslinya (${it.pos} kata)`, cards:[], write:{ target:it.h.ch, guide: level === "easy", show:true, others:wrongLetters(it.h.ch, "hard") } });
         else qs.push({ ...base, cards:shuffle([it.h.ch, ...wrongLetters(it.h.ch, level, HIJAIYAH.filter(x => x.ch !== "ء").map(x => x.ch))]), cardClass:"letter" });
       }
@@ -161,11 +163,11 @@ window.Hijaiyah = (() => {
         }
         const seen = new Set([ans.s]); wrong = wrong.filter(w => !seen.has(w.s) && seen.add(w.s)).slice(0, n - 1);
         if (i % 2 === 0)
-          qs.push({ label:"Bagaimana bacaannya?", prompt:ans.g, promptClass:"big-ar", slots:[ans.s],
-                    cards:shuffle([ans.s, ...wrong.map(w => w.s)]), cardClass:"latin", playEnd:{ tts:ans.g } , hint:{ tts:ans.g } });
+          qs.push({ label:"Bagaimana bacaannya?", prompt:ans.g, promptClass:"big-hij", slots:[ans.s],
+                    cards:shuffle([ans.s, ...wrong.map(w => w.s)]), cardClass:"latin" });
         else
           qs.push({ label:`Mana yang dibaca "${ans.s}"?`, prompt:ans.s, promptClass:"big-latin", slots:[ans.g],
-                    cards:shuffle([ans.g, ...wrong.map(w => w.g)]), cardClass:"letter", playEnd:{ tts:ans.g }, hint:{ tts:ans.g } });
+                    cards:shuffle([ans.g, ...wrong.map(w => w.g)]), cardClass:"letter" });
       }
       return qs;
     }

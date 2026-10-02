@@ -2,7 +2,7 @@
    Tulisan anak dibandingkan dengan bentuk huruf asli dan huruf-huruf yang mirip. */
 window.Draw = (() => {
   const N = 48;
-  const FONTS = ['"Amiri Quran"', "Tahoma", "Arial", "sans-serif"];
+  const FONTS = ['"Noto Naskh Arabic"', '"Amiri Quran"', "Tahoma", "Arial", "sans-serif"];
 
   // ubah kanvas menjadi grid N x N (dipotong ke area tinta, rasio dijaga)
   function toGrid(src){
