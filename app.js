@@ -85,12 +85,14 @@
     $("#btnStart").disabled = !!msg;
   }
 
-  $("#btnStart").onclick = () => {
-    go("arena");
-    Arena.start({ control:S.control, play:S.play, name:S.name });
-  };
+  const gameOpts = () => ({
+    control:S.control, play:S.play, name:S.name, mode:S.mode, qari:S.qari, sound:S.sound,
+    time:S.time, rounds:S.rounds, surahs:S.surahs.slice().sort((a, b) => a - b),
+    names:Object.fromEntries(SURAHS.map(s => [s.no, s.name])),
+    onExit:() => go("home")
+  });
+  $("#btnStart").onclick = () => { go("arena"); Arena.start(gameOpts()); };
   $("#arenaBack").onclick = () => { Arena.stop(); go("setup"); };
-  $("#msgBtn").onclick = () => { Arena.stop(); Arena.start({ control:S.control, play:S.play, name:S.name }); };
   $("#creditLink").onclick = e => e.preventDefault();
 
   // ---------- SETTINGS ----------

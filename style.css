@@ -161,3 +161,33 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .arena-msg[hidden]{display:none}
 .arena-msg p{text-align:center;margin:4px 0 14px;line-height:1.5}
 .arena-msg .plank{display:block;margin:0 auto}
+
+/* TAHAP 3 */
+.stage{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 74px);z-index:1;display:grid;gap:10px;justify-items:center;padding:0 10px;pointer-events:none}
+.stage button{pointer-events:auto}
+.prompt{width:min(760px,100%);background:rgba(43,26,12,.82);border:3px solid var(--ink);border-radius:16px;padding:8px 14px 10px;color:var(--cream)}
+.prompt[hidden]{display:none}
+.prompt-head{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;opacity:.95}
+.listen{margin-left:auto;display:flex;align-items:center;gap:6px;padding:3px 12px;font-weight:700;font-size:14px;background:var(--gold);color:var(--ink);border:2px solid var(--ink);border-radius:20px;box-shadow:0 3px 0 var(--ink)}
+.listen svg{width:18px;height:18px}
+.listen:active{transform:translateY(3px);box-shadow:none}
+.prompt p{text-align:center;font-size:16px;margin-top:4px}
+.prompt p.ar{font-family:var(--font-ar);font-size:clamp(24px,4.4vw,36px);line-height:1.7}
+.slots{position:static;translate:none;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:min(900px,96vw)}
+.slot{min-width:110px;min-height:64px;height:auto;padding:4px 12px;text-align:center;line-height:1.6}
+.slot.wide{min-width:min(520px,90vw);font-family:var(--font-body);font-size:16px}
+.slot.next{border-color:var(--gold);border-style:solid;box-shadow:0 0 0 4px rgba(246,198,74,.5)}
+.slot.ok{font-family:var(--font-ar)}
+.slot.missed{background:#e9d8b4}
+.card{max-width:86vw;white-space:normal}
+.floater{position:absolute;z-index:7;translate:-50% 0;font-family:var(--font-ui);font-size:26px;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;pointer-events:none;animation:rise .9s ease-out forwards}
+@keyframes rise{to{transform:translateY(-60px);opacity:0}}
+.hud-box.low{background:var(--red);box-shadow:0 4px 0 var(--red-d)}
+.hud-box.status{margin-left:auto}
+.msg-actions{display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:6px}
+.arena-msg p{text-align:center;margin:4px 0 12px;line-height:1.5}
+.result-big{font-family:var(--font-ui);font-size:24px;color:var(--wood-d)}
+.duel-score{display:flex;justify-content:center;align-items:center;gap:16px;margin:4px 0 12px}
+.duel-score span{font-family:var(--font-ui);font-size:54px;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+.duel-score .p1{color:#f6a531}.duel-score .p2{color:#5aa9ff}
+.duel-score .vs{font-size:18px;-webkit-text-stroke:0;color:var(--ink)}

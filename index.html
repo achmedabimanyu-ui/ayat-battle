@@ -108,23 +108,36 @@
     </div>
   </section>
 
-  <!-- ARENA (uji gestur) -->
+  <!-- ARENA -->
   <section class="screen" id="arena">
     <video id="cam" playsinline muted></video>
     <canvas id="fx"></canvas>
+    <div class="stage" id="stage">
+      <div class="prompt" id="prompt" hidden>
+        <div class="prompt-head"><span id="promptLabel"></span>
+          <button class="listen" id="btnListen" aria-label="Dengarkan ayat"><svg viewBox="0 0 24 24"><use href="#i-sound"/></svg>Dengar</button>
+        </div>
+        <p class="ar" id="promptText" dir="rtl"></p>
+      </div>
+      <div class="slots" id="slots" dir="rtl"></div>
+    </div>
     <div id="cards"></div>
-    <div class="slots" id="slots"></div>
+    <div id="floaters"></div>
     <header class="hud">
       <button class="round sm" id="arenaBack" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
       <div class="hud-box" id="hudP1"><small>Poin</small><b>0</b></div>
       <div class="hud-box p2" id="hudP2" hidden><small>Pemain 2</small><b>0</b></div>
-      <div class="hud-box status" id="hudStatus"><small>Status</small><b>Siap</b></div>
+      <div class="hud-box status" id="hudStatus"><small>Soal</small><b>1/10</b></div>
+      <div class="hud-box" id="hudTime" hidden><small>Waktu</small><b>30</b></div>
     </header>
     <div class="arena-msg" id="arenaMsg" hidden>
       <div class="modal-card">
         <h2 class="board" id="msgTitle">Menyalakan kamera</h2>
-        <p id="msgText">Izinkan akses kamera saat browser bertanya.</p>
-        <button class="plank wood" id="msgBtn" hidden>Coba lagi</button>
+        <div id="msgText"></div>
+        <div class="msg-actions">
+          <button class="plank wood" id="msgBtn" hidden>Coba lagi</button>
+          <button class="plank stone" id="msgBtn2" hidden>Menu</button>
+        </div>
       </div>
     </div>
   </section>
@@ -179,6 +192,8 @@
 
 <script src="data.js"></script>
 <script src="gesture.js"></script>
+<script src="quran.js"></script>
+<script src="questions.js"></script>
 <script src="arena.js"></script>
 <script src="app.js"></script>
 </body>
