@@ -41,24 +41,53 @@
     go(b.dataset.go);
   }));
 
-  // ---------- SURAH PICKER ----------
-  const grid = $("#surahGrid");
+  // ---------- PILIH BACAAN (per surat / per juz) ----------
+  S.pickBy ||= "surah"; S.juzs ||= [];
+  const grid = $("#surahGrid"), jgrid = $("#juzGrid");
   grid.innerHTML = SURAHS.map(s =>
     `<button class="surah" data-no="${s.no}" aria-pressed="false"><span class="no">${s.no}</span><b>${s.name}</b><small>${s.ayat} ayat</small></button>`
   ).join("");
-  function renderSurahs(){
-    $$(".surah").forEach(b => b.setAttribute("aria-pressed", S.surahs.includes(+b.dataset.no)));
-    $("#pickCount").textContent = `${S.surahs.length} surat dipilih`;
+  jgrid.innerHTML = JUZ_START.map(([s, a], i) =>
+    `<button class="surah" data-juz="${i + 1}" aria-pressed="false"><span class="no">${i + 1}</span><b>Juz ${i + 1}</b><small>Mulai ${SURAHS[s - 1].name} ${a}</small></button>`
+  ).join("");
+
+  function renderPick(){
+    $$(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.by === S.pickBy));
+    $("#bySurah").hidden = S.pickBy !== "surah"; $("#byJuz").hidden = S.pickBy !== "juz";
+    grid.querySelectorAll(".surah").forEach(b => b.setAttribute("aria-pressed", S.surahs.includes(+b.dataset.no)));
+    jgrid.querySelectorAll(".surah").forEach(b => b.setAttribute("aria-pressed", S.juzs.includes(+b.dataset.juz)));
+    if (S.pickBy === "surah"){
+      const ayat = S.surahs.reduce((t, n) => t + SURAHS[n - 1].ayat, 0);
+      $("#pickCount").textContent = S.surahs.length ? `${S.surahs.length} surat dipilih, ${ayat} ayat` : "Belum ada surat dipilih";
+    } else $("#pickCount").textContent = S.juzs.length ? `${S.juzs.length} juz dipilih` : "Belum ada juz dipilih";
     validate();
   }
+  $$(".tab").forEach(t => t.onclick = () => { S.pickBy = t.dataset.by; save(); renderPick(); });
   grid.addEventListener("click", e => {
     const b = e.target.closest(".surah"); if (!b) return;
     const no = +b.dataset.no;
     S.surahs = S.surahs.includes(no) ? S.surahs.filter(n => n !== no) : [...S.surahs, no];
-    save(); renderSurahs();
+    save(); renderPick();
   });
-  $("#pickAll").onclick = () => { S.surahs = SURAHS.map(s => s.no); save(); renderSurahs(); };
-  $("#pickNone").onclick = () => { S.surahs = []; save(); renderSurahs(); };
+  jgrid.addEventListener("click", e => {
+    const b = e.target.closest(".surah"); if (!b) return;
+    const n = +b.dataset.juz;
+    S.juzs = S.juzs.includes(n) ? S.juzs.filter(x => x !== n) : [...S.juzs, n];
+    save(); renderPick();
+  });
+  $("#surahSearch").oninput = e => {
+    const q = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "");
+    grid.querySelectorAll(".surah").forEach(b => {
+      const s = SURAHS[b.dataset.no - 1];
+      b.hidden = q && !(s.name.toLowerCase().replace(/[^a-z0-9]/g, "").includes(q) || String(s.no) === q);
+    });
+  };
+  $("#pickAmma").onclick = () => { S.surahs = [...new Set([...S.surahs, ...SURAHS.filter(s => s.no >= 78).map(s => s.no)])]; save(); renderPick(); };
+  $("#pickNone").onclick = () => { S.surahs = []; save(); renderPick(); };
+  $("#juzNone").onclick = () => { S.juzs = []; save(); renderPick(); };
+  const pick = () => S.pickBy === "juz"
+    ? { by:"juz", list:S.juzs.slice().sort((a, b) => a - b) }
+    : { by:"surah", list:S.surahs.slice().sort((a, b) => a - b) };
 
   // ---------- OPTION GROUPS ----------
   function optionGroup(el, list, key){
@@ -78,16 +107,14 @@
   // ---------- VALIDATION ----------
   function validate(){
     let msg = "";
-    if (!S.surahs.length) msg = "Pilih minimal satu surat.";
-    else if (S.mode === "lanjutkan" && S.surahs.every(n => SURAHS.find(s => s.no === n).ayat < 2)) msg = "Surat yang dipilih terlalu pendek.";
-    else if (S.play === "duel-local" && S.control === "touch") msg = "";
+    if (!pick().list.length) msg = S.pickBy === "juz" ? "Pilih minimal satu juz." : "Pilih minimal satu surat.";
     $("#startHint").textContent = msg;
     $("#btnStart").disabled = !!msg;
   }
 
   const gameOpts = () => ({
     control:S.control, play:S.play, name:S.name, mode:S.mode, qari:S.qari, sound:S.sound,
-    time:S.time, rounds:S.rounds, surahs:S.surahs.slice().sort((a, b) => a - b),
+    time:S.time, rounds:S.rounds, pick:pick(),
     names:Object.fromEntries(SURAHS.map(s => [s.no, s.name])),
     onExit:() => go("home")
   });
@@ -136,7 +163,7 @@
   }
   $("#btnCreate").onclick = async () => {
     const n = lobbyName(); if (!n || !Online.ready()) return;
-    if (!S.surahs.length){ lobbyHint("Pilih surat dulu di layar sebelumnya."); return; }
+    if (!pick().list.length){ lobbyHint("Pilih surat atau juz dulu di layar sebelumnya."); return; }
     lobbyHint("Membuat room...");
     try { showRoom(await Online.create(n)); lobbyHint(""); }
     catch(e){ lobbyHint("Gagal terhubung. Periksa internet dan isi config.js."); }
@@ -154,8 +181,8 @@
     $("#roomNote").textContent = "Menyiapkan soal...";
     try {
       const o = gameOpts();
-      const data = await Quran.load(o.surahs);
-      const questions = Questions.build(o.mode, data, +o.rounds, o.names);
+      const verses = await Quran.load(o.pick);
+      const questions = Questions.build(o.mode, verses, +o.rounds, o.names);
       if (!questions.length) throw new Error();
       const payload = { questions, mode:o.mode, time:o.time, startAt:Date.now() + 3500 };
       await Online.start(payload);
@@ -200,5 +227,5 @@
     save(); close();
   };
 
-  renderSoundBtn(); renderSurahs();
+  renderSoundBtn(); renderPick();
 })();

@@ -62,13 +62,24 @@
     </header>
 
     <div class="panel">
-      <h3 class="step">1. Pilih surat</h3>
-      <div class="chips">
-        <button class="chip" id="pickAll">Pilih semua</button>
-        <button class="chip" id="pickNone">Kosongkan</button>
-        <span class="count" id="pickCount">0 surat dipilih</span>
+      <h3 class="step">1. Pilih bacaan</h3>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-by="surah">Per surat</button>
+        <button class="tab" role="tab" data-by="juz">Per juz</button>
       </div>
-      <div class="surah-grid" id="surahGrid"></div>
+      <div id="bySurah">
+        <div class="chips">
+          <input class="search" id="surahSearch" type="search" placeholder="Cari surat" aria-label="Cari surat">
+          <button class="chip" id="pickAmma">Semua Juz 30</button>
+          <button class="chip" id="pickNone">Kosongkan</button>
+        </div>
+        <div class="surah-grid" id="surahGrid"></div>
+      </div>
+      <div id="byJuz" hidden>
+        <div class="chips"><button class="chip" id="juzNone">Kosongkan</button></div>
+        <div class="surah-grid juz-grid" id="juzGrid"></div>
+      </div>
+      <p class="count" id="pickCount"></p>
     </div>
 
     <div class="panel">

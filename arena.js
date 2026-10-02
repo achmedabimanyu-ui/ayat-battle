@@ -318,9 +318,9 @@ window.Arena = (() => {
     $("#cam").style.display = opt.control === "touch" || opt.noCam ? "none" : "";
 
     try {
-      msg("Memuat ayat", "<p>Mengambil teks ayat. Pertama kali butuh internet, berikutnya lebih cepat.</p>");
+      msg("Memuat ayat", "<p>Mengambil teks ayat. Surat atau juz yang baru pertama kali dipilih butuh internet dan sedikit lebih lama.</p>");
       if (opt.questions) qs = opt.questions;
-      else { const data = await Quran.load(opt.surahs); qs = Questions.build(opt.mode, data, +opt.rounds, opt.names); }
+      else { const verses = await Quran.load(opt.pick); qs = Questions.build(opt.mode, verses, +opt.rounds, opt.names); }
       if (!qs.length) throw Object.assign(new Error(), { name:"NO_Q" });
     } catch(e){
       msg("Ayat belum bisa dimuat", e.name === "NO_Q"
