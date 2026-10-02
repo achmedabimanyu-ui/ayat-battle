@@ -275,3 +275,161 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .vtext small{font-weight:700;font-size:14px}
 .vtext p{font-family:var(--font-ar);font-size:22px;line-height:1.5;min-height:1.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .voice-bar.shake{animation:shake .35s}
+
+/* =========================================================
+   POLES UI v2: animasi & keseragaman
+   ========================================================= */
+:root{
+  --b:3px solid var(--ink);
+  --r-sm:12px; --r-md:16px; --r-lg:20px;
+  --ease-pop:cubic-bezier(.34,1.56,.64,1);
+  --press:5px;
+}
+
+/* ---------- LATAR ---------- */
+.sun .rays{transform-origin:318px 118px;animation:spin 40s linear infinite}
+.sun circle:first-child{transform-origin:318px 118px;animation:glow 5s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes glow{50%{transform:scale(1.12);opacity:.8}}
+.c1{animation:drift 38s ease-in-out infinite alternate}
+.c2{animation:drift2 52s ease-in-out infinite alternate}
+.c3{animation:drift 64s ease-in-out infinite alternate-reverse}
+@keyframes drift{to{transform:translateX(60px)}}
+@keyframes drift2{to{transform:translateX(-70px)}}
+.bird{animation:fly 26s linear infinite}
+.bird path{transform-box:fill-box;transform-origin:center;animation:flap .5s ease-in-out infinite alternate}
+.b1{animation-delay:-4s}.b2{animation-delay:-11s;animation-duration:30s}.b3{animation-delay:-19s;animation-duration:34s}
+@keyframes fly{from{transform:translate(-40px,190px)}50%{transform:translate(200px,160px)}to{transform:translate(440px,200px)}}
+@keyframes flap{to{transform:scaleY(.4)}}
+.d1{animation:dune 18s ease-in-out infinite alternate}
+.d3{animation:dune 14s ease-in-out infinite alternate-reverse}
+@keyframes dune{to{transform:translateX(-14px)}}
+.fronds{transform-origin:-2px 2px;animation:sway 4s ease-in-out infinite alternate}
+@keyframes sway{from{transform:rotate(-4deg)}to{transform:rotate(5deg)}}
+.sp{transform-box:fill-box;transform-origin:center;animation:twinkle 3s ease-in-out infinite}
+.s2{animation-delay:-1s}.s3{animation-delay:-2s}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:.9;transform:scale(1)}}
+
+/* lentera */
+.lanterns{position:absolute;inset:0 0 auto;height:0;pointer-events:none}
+#home{position:relative}
+.lantern{position:absolute;top:-16px;width:34px;height:112px;transform-origin:50% 0;animation:swing 3.6s ease-in-out infinite alternate;filter:drop-shadow(0 6px 6px rgba(60,30,10,.25))}
+.l1{left:6%}.l2{right:6%;animation-delay:-1.8s;height:88px;width:28px}
+@keyframes swing{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
+.flame{animation:flame 1.4s ease-in-out infinite alternate}
+@keyframes flame{to{opacity:.55}}
+
+/* ---------- TRANSISI LAYAR ---------- */
+.screen.active{animation:screenIn .45s var(--ease-pop) both}
+@keyframes screenIn{from{opacity:0;translate:0 18px;scale:.98}}
+#arena.active{animation:fadeIn .3s ease both}
+@keyframes fadeIn{from{opacity:0}}
+
+/* ---------- LOGO ---------- */
+.logo{animation:logoIn .8s var(--ease-pop) both}
+.logo-top{animation:bob 4s ease-in-out infinite}
+.logo-bottom{animation:bob 4s ease-in-out -2s infinite}
+@keyframes logoIn{from{opacity:0;scale:.6;translate:0 -30px}}
+@keyframes bob{50%{translate:0 -6px}}
+.tagline{animation:screenIn .6s .25s var(--ease-pop) both}
+
+/* ---------- TOMBOL 3D SERAGAM ---------- */
+.plank,.round,.chip,.tab,.opt,.surah,.listen,.next-btn{
+  -webkit-user-select:none;user-select:none;
+  transition:translate .12s var(--ease-pop),box-shadow .12s ease,filter .15s ease,background-color .2s ease;
+}
+.plank:hover,.round:hover,.chip:hover,.tab:hover,.opt:hover,.surah:hover,.listen:hover,.next-btn:hover{translate:0 -3px;filter:brightness(1.06)}
+.plank:active,.round:active,.chip:active,.tab:active,.opt:active,.surah:active,.listen:active,.next-btn:active{translate:0 var(--press);filter:brightness(.97)}
+.plank:active{transform:none}
+
+/* kilau menyapu di tombol papan */
+.plank{overflow:hidden;isolation:isolate}
+.plank::after{content:"";position:absolute;top:-20%;bottom:-20%;left:-40%;width:30%;z-index:-1;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);translate:-120% 0}
+.plank:hover::after{animation:shine .7s ease}
+@keyframes shine{to{translate:520% 0}}
+
+/* menu masuk bergantian */
+.menu .plank{animation:dropIn .55s var(--ease-pop) both}
+.menu .plank:nth-child(1){animation-delay:.15s}.menu .plank:nth-child(2){animation-delay:.23s}
+.menu .plank:nth-child(3){animation-delay:.31s}.menu .plank:nth-child(4){animation-delay:.39s}
+.round-row .round{animation:dropIn .5s var(--ease-pop) both}
+.round-row .round:nth-child(1){animation-delay:.48s}.round-row .round:nth-child(2){animation-delay:.54s}.round-row .round:nth-child(3){animation-delay:.6s}
+.credit{animation:dropIn .5s .7s var(--ease-pop) both}
+@keyframes dropIn{from{opacity:0;translate:0 -24px;scale:.85}}
+
+/* tombol bulat bergoyang saat hover */
+.round:hover svg{animation:wiggle .5s ease}
+@keyframes wiggle{25%{transform:rotate(-12deg)}75%{transform:rotate(10deg)}}
+.round[aria-label="Pengaturan"]:hover svg{animation:spin 1s ease}
+
+/* ---------- PANEL & BAGIAN ---------- */
+.panel{border-radius:var(--r-lg);animation:panelIn .5s var(--ease-pop) both}
+#setup .panel:nth-of-type(2){animation-delay:.08s}#setup .panel:nth-of-type(3){animation-delay:.16s}
+@keyframes panelIn{from{opacity:0;translate:0 20px}}
+.board{border-radius:var(--r-sm)}
+.step{display:flex;align-items:center;gap:8px}
+.step::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--gold);border:2px solid var(--ink);rotate:45deg}
+
+/* pilihan terpilih memantul */
+.opt[aria-pressed="true"],.surah[aria-pressed="true"],.tab[aria-selected="true"]{animation:picked .35s var(--ease-pop)}
+@keyframes picked{40%{scale:1.06}}
+.opt[aria-pressed="true"]::after,.surah[aria-pressed="true"]::after{content:"";position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;
+  background:var(--moss) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4L18 8' stroke='%232f3a06' stroke-width='3.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat;
+  border:2px solid var(--ink)}
+.opt{position:relative}
+.opt[aria-pressed="true"]::after{background-color:#fff3d4}
+.surah-grid{scrollbar-width:thin;scrollbar-color:var(--wood) transparent}
+
+/* tombol mulai berdenyut kalau siap */
+#btnStart:not(:disabled){animation:ready 2.2s ease-in-out infinite}
+@keyframes ready{0%,100%{box-shadow:0 7px 0 var(--d),0 10px 0 var(--ink),0 16px 18px rgba(60,30,10,.3)}50%{box-shadow:0 7px 0 var(--d),0 10px 0 var(--ink),0 0 0 8px rgba(246,198,74,.45)}}
+
+/* ---------- MODAL ---------- */
+.modal{animation:fadeIn .2s ease both;backdrop-filter:blur(3px)}
+.modal-card{border-radius:var(--r-lg);animation:modalIn .4s var(--ease-pop) both}
+@keyframes modalIn{from{opacity:0;scale:.8;translate:0 30px}}
+.field input,.field select{transition:border-color .15s,box-shadow .15s}
+.field input:focus,.field select:focus{border-color:var(--wood);box-shadow:0 0 0 4px rgba(246,198,74,.45);outline:none}
+
+/* ---------- ARENA ---------- */
+#arena.nocam{background:transparent}
+#arena.nocam::before{content:"";position:absolute;inset:0;background:rgba(40,20,5,.12)}
+#arena:not(.nocam)::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(30,15,5,.45))}
+.barea{z-index:2}
+.bhud .hud-box{border-radius:var(--r-sm);animation:dropIn .45s var(--ease-pop) both}
+.bhud .hud-box b{transition:color .2s}
+.bhud .who.bump b{animation:bump .4s var(--ease-pop)}
+@keyframes bump{40%{scale:1.35;color:var(--gold)}}
+.prompt{border-radius:var(--r-md);box-shadow:0 6px 0 rgba(30,15,5,.5);animation:dropIn .45s var(--ease-pop) both}
+.card{border-radius:var(--r-md);animation:cardIn .5s var(--ease-pop) both}
+@keyframes cardIn{from{opacity:0;scale:.4}}
+.card.hover{scale:1.05}
+.card.held{scale:1.1;box-shadow:0 0 0 4px var(--gold),0 14px 20px rgba(0,0,0,.35)}
+.card.pop{animation:popout .35s ease forwards}
+@keyframes popout{50%{scale:1.25;opacity:1}to{scale:.2;opacity:0}}
+.slot{border-radius:var(--r-md);transition:background .2s,border-color .2s,scale .2s}
+.slot.near{scale:1.06}
+.slot.ok{animation:slotOk .5s var(--ease-pop)}
+@keyframes slotOk{0%{scale:.8}50%{scale:1.12;box-shadow:0 0 0 8px rgba(169,184,74,.5)}100%{scale:1}}
+.slot.next{animation:nextSlot 1.2s ease-in-out infinite}
+@keyframes nextSlot{50%{box-shadow:0 0 0 8px rgba(246,198,74,.35)}}
+.arena-back{border-radius:46% 54% 50% 50% / 48% 46% 54% 52%}
+
+/* konfeti */
+.confetti{position:absolute;inset:0;z-index:7;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;top:-12px;width:10px;height:14px;border-radius:2px;animation:fall var(--d,1.6s) cubic-bezier(.2,.6,.4,1) forwards}
+@keyframes fall{to{transform:translate(var(--x,0),105vh) rotate(var(--r,540deg));opacity:.9}}
+
+/* hitung mundur & hasil */
+.countdown{animation:fadeIn .2s ease}
+.countdown.tick{animation:tick .9s var(--ease-pop)}
+@keyframes tick{0%{scale:2.2;opacity:0}30%{scale:1;opacity:1}100%{scale:.9;opacity:.85}}
+.duel-score span{animation:dropIn .6s var(--ease-pop) both}
+.duel-score .p2{animation-delay:.15s}
+.result-big{animation:screenIn .5s var(--ease-pop) both}
+
+@media (hover:none){
+  .plank:hover,.round:hover,.chip:hover,.tab:hover,.opt:hover,.surah:hover,.listen:hover,.next-btn:hover{translate:none;filter:none}
+}
+.round:active,.chip:active,.tab:active,.opt:active,.surah:active,.listen:active,.next-btn:active{transform:none}

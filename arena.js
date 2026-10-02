@@ -120,6 +120,19 @@ window.Arena = (() => {
       if (this.q?.latin){ s.el.classList.add("latin"); s.el.style.fontSize = Math.round(24 * this.scale) + "px"; }
       else s.el.style.fontSize = Math.round(Math.min(30, fontFor(s.value)) * this.scale) + "px";
     }
+    confetti(n = 36){
+      const box = el("div", "confetti", this.root);
+      const cols = ["#f6c64a", "#a9b84a", "#b6402c", "#5aa9ff", "#fde7bf", "#f6a531"];
+      for (let i = 0; i < n; i++){
+        const c = el("i", "", box);
+        c.style.left = Math.random() * 100 + "%"; c.style.background = cols[i % cols.length];
+        c.style.setProperty("--x", (Math.random() - .5) * 160 + "px");
+        c.style.setProperty("--r", (Math.random() * 900 - 450) + "deg");
+        c.style.setProperty("--d", (1.2 + Math.random() * .9) + "s");
+        c.style.animationDelay = Math.random() * .25 + "s";
+      }
+      setTimeout(() => box.remove(), 2600);
+    }
     floater(x, y, text){
       const f = el("div", "floater", this.layer, text);
       f.style.left = x + "px"; f.style.top = y + "px"; f.style.color = this.color;
@@ -154,6 +167,7 @@ window.Arena = (() => {
       const done = this.slots.every(x => x.done);
       let bonus = 0;
       if (done && this.q.reveal) this.pLabel.textContent = this.q.reveal;
+      this.hWho.classList.remove("bump"); void this.hWho.offsetWidth; this.hWho.classList.add("bump");
       if (done){
         this.busy = true; clearInterval(this.timer);
         const total = +opt.time; bonus = total ? Math.round(5 * Math.max(0, this.timeLeft) / total) : 0;
@@ -171,7 +185,7 @@ window.Arena = (() => {
           setTimeout(() => k.remove(), 1100);
         } else Sfx.correct();
         if (opt.control === "shoot" && !done){ const n = this.slots.find(x => !x.done); if (n) n.el.classList.add("next"); }
-        if (done) play(this.q.playEnd);
+        if (done){ play(this.q.playEnd); this.confetti(); }
       });
     }
     wrong(c){ Sfx.wrong(); c.el.classList.remove("wrong"); void c.el.offsetWidth; c.el.classList.add("wrong"); this.streak = 0; c.vy = 3; }
@@ -357,6 +371,7 @@ window.Arena = (() => {
       html = `<p class="result-big">${w}</p><div class="duel-score"><span class="p1">${a.score}</span><span class="vs">lawan</span><span class="p2">${b.score}</span></div>`;
     } else html = `<p class="result-big">${opt.name ? opt.name + ", poinmu" : "Poinmu"}</p><div class="duel-score"><span class="p1">${me.score}</span></div>`;
     Sfx.finish();
+    [...boards, ghost].filter(Boolean).forEach(b => safely(() => b.confetti(70)));
     msg("Selesai", html + "<p>Barakallahu fiik. Terus murajaah, ya.</p>", opt.online ? null : "Main lagi", "Menu");
     $("#msgBtn").onclick = () => { stop(); start(opt); };
     $("#msgBtn2").onclick = () => { stop(); opt.onExit(); };
@@ -403,7 +418,9 @@ window.Arena = (() => {
     a.addEventListener("pointerdown", onDown); a.addEventListener("pointermove", onMove);
     a.addEventListener("pointerup", onUp); a.addEventListener("pointercancel", onUp);
     addEventListener("resize", resize);
-    $("#cam").style.display = opt.control === "touch" || opt.control === "voice" || opt.noCam ? "none" : "";
+    const noCam = opt.control === "touch" || opt.control === "voice" || opt.noCam;
+    $("#cam").style.display = noCam ? "none" : "";
+    a.classList.toggle("nocam", noCam);
 
     try {
       msg("Memuat ayat", "<p>Mengambil teks ayat. Surat atau juz yang baru pertama kali dipilih butuh internet dan sedikit lebih lama.</p>");

@@ -193,9 +193,10 @@
     $("#btnDuel").disabled = false;
   };
   function beginDuel(p){
-    let n = 3; const cd = $("#countdown"); cd.textContent = n; cd.hidden = false;
+    let n = 3; const cd = $("#countdown"); const tick = () => { cd.classList.remove("tick"); void cd.offsetWidth; cd.classList.add("tick"); };
+    cd.textContent = n; cd.hidden = false; tick();
     const t = setInterval(() => {
-      n--; if (n > 0) cd.textContent = n;
+      n--; if (n > 0){ cd.textContent = n; tick(); }
       else {
         clearInterval(t); cd.hidden = true; inGame = true; go("arena");
         Arena.start({ ...gameOpts(), play:"duel-online", mode:p.mode, time:p.time, questions:p.questions,
