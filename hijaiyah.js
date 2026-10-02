@@ -81,28 +81,28 @@ window.Hijaiyah = (() => {
     return all.filter(w => !seen.has(w[0]) && seen.add(w[0]));
   }
 
-  // tahap sebuah kata dari tanda bacanya (1 = harakat dasar ... 5 = lengkap)
+  // ciri bacaan sebuah kata: 1 harakat, 2 tanwin, 3 mad, 4 sukun/alif lam, 5 tasydid & lainnya
   const LETTER = /[\u0621-\u064A\u0671]/;
-  function tahapOf(word){
-    let t = 1;
-    if (/[\u0651\u06DF\u06E0\u06E2\u06E3\u06ED\u06EA-\u06EC\u0653\u06DC]/.test(word)) t = Math.max(t, 5);
-    if (/[\u0652\u06E1\u0671]/.test(word)) t = Math.max(t, 4);
-    if (/[\u0670\u06E5\u06E6]/.test(word)) t = Math.max(t, 3);
-    if (/[\u064B-\u064D\u08F0-\u08F2]/.test(word)) t = Math.max(t, 2);
+  function featuresOf(word){
+    const f = new Set([1]);
+    if (/[\u0651\u06DF\u06E0\u06E2\u06E3\u06ED\u06EA-\u06EC\u0653\u06DC]/.test(word)) f.add(5);
+    if (/[\u0652\u06E1\u0671]/.test(word)) f.add(4);
+    if (/[\u0670\u06E5\u06E6]/.test(word)) f.add(3);
+    if (/[\u064B-\u064D\u08F0-\u08F2]/.test(word)) f.add(2);
     const chars = [...word.replace(/[\u06D6-\u06DB\u06DD\u06DE\u06E9]/g, "")];
     chars.forEach((c, i) => {
       if (!LETTER.test(c)) return;
-      // tanda pada huruf ini
       let j = i + 1, marks = "";
       while (j < chars.length && !LETTER.test(chars[j])) marks += chars[j++];
       if (marks) return;
       const prev = chars.slice(0, i).join("");
       if ((c === "ا" || c === "ى") && /[\u064B\u08F0]\s*$/.test(prev)) return;   // alif penyangga tanwin
-      if ("اويى".includes(c)) t = Math.max(t, 3);          // huruf mad tanpa harakat
-      else if (c !== "\u0671") t = Math.max(t, 5);          // huruf tanpa tanda (idgham, dll)
+      if ("اويى".includes(c)) f.add(3);                    // huruf mad tanpa harakat
+      else if (c !== "\u0671") f.add(5);                  // huruf tanpa tanda (idgham, dll)
     });
-    return t;
+    return f;
   }
+  const tahapOf = w => Math.max(...featuresOf(w));
   const letters = w => (w.match(/[\u0621-\u064A\u0671]/g) || []).length;
   const audioOf = a => !a ? null : a.startsWith("http") ? a : "https://audio.qurancdn.com/" + a;
 
@@ -176,11 +176,20 @@ window.Hijaiyah = (() => {
     const words = await loadWords(o.pick);
     const tahap = +o.tahap || 1;
     const maxLen = level === "easy" ? 4 : level === "medium" ? 6 : 99;
-    const enriched = words.map(w => ({ t:w[0], audio:audioOf(w[1]), tr:w[2], key:w[3], tahap:tahapOf(w[0]), len:letters(w[0]), n:Quran.norm(w[0]) }))
-      .filter(w => w.len >= 2);
-    let pool = enriched.filter(w => w.tahap === tahap && w.len <= maxLen);
-    if (pool.length < 6) pool = enriched.filter(w => w.tahap <= tahap && w.len <= maxLen);
-    if (pool.length < 3) pool = enriched.filter(w => w.tahap <= tahap);
+    const enriched = words.map(w => {
+      const f = featuresOf(w[0]);
+      return { t:w[0], audio:audioOf(w[1]), tr:w[2], key:w[3], f, tahap:Math.max(...f), len:letters(w[0]), n:Quran.norm(w[0]) };
+    }).filter(w => w.len >= 2);
+    // utamakan kata yang MEMUAT materi tahap ini dan tidak memuat materi tahap di atasnya
+    const hasNew = w => tahap === 1 || w.f.has(tahap);
+    const tries = [
+      w => w.tahap <= tahap && hasNew(w) && w.len <= maxLen,
+      w => w.tahap <= tahap && hasNew(w),
+      w => hasNew(w) && w.tahap <= tahap + 1,
+      w => w.tahap <= tahap
+    ];
+    let pool = [];
+    for (const t of tries){ pool = enriched.filter(t); if (pool.length >= 4) break; }
     if (pool.length < 2) return [];
     const order = []; while (order.length < rounds) order.push(...shuffle(pool)); order.length = rounds;
 
@@ -199,5 +208,5 @@ window.Hijaiyah = (() => {
     });
   }
 
-  return { build, tahapOf, syllable, glyph };
+  return { build, tahapOf, featuresOf, syllable, glyph };
 })();

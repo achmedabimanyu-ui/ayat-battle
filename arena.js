@@ -6,7 +6,7 @@ window.Arena = (() => {
   const el = (tag, cls, parent, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; parent?.appendChild(e); return e; };
   const fontFor = t => t.length > 60 ? 20 : t.length > 38 ? 24 : t.length > 22 ? 28 : 34;
 
-  let opt, qs = [], boards = [], ghost = null, raf = 0, ctx, W, H, alive = false, touch = {};
+  let opt, qs = [], boards = [], ghost = null, raf = 0, ctx, W, H, alive = false, touch = {}, paused = false;
   const audio = new Audio();
   const voiceMode = () => opt.control === "voice";
   let owner = null;                                   // papan yang sedang memutar suara
@@ -146,6 +146,7 @@ window.Arena = (() => {
       const total = +opt.time; if (!total) return;
       this.timeLeft = total; this.hTime.textContent = total; this.hT.classList.remove("low");
       this.timer = setInterval(() => {
+        if (paused) return;
         this.timeLeft--; this.hTime.textContent = Math.max(0, this.timeLeft);
         this.hT.classList.toggle("low", this.timeLeft <= 5);
         if (this.timeLeft <= 0){ clearInterval(this.timer); this.reveal(); }
@@ -181,7 +182,8 @@ window.Arena = (() => {
       clearTimeout(this.advT);
       const at = this.qi;
       if (this.btnNext){ this.btnNext.textContent = "Lanjut"; this.btnNext.classList.add("ready"); }
-      this.advT = setTimeout(() => { if (alive && this.qi === at && !this.finished) this.next(); }, delay);
+      const go = () => { if (!alive || this.qi !== at || this.finished) return; if (paused){ this.advT = setTimeout(go, 300); return; } this.next(); };
+      this.advT = setTimeout(go, delay);
     }
     manualNext(){
       if (this.finished) return;
@@ -434,6 +436,7 @@ window.Arena = (() => {
   function loop(){
     if (!alive) return;
     raf = requestAnimationFrame(loop);
+    if (paused) return;
     ctx.clearRect(0, 0, W, H);
     let pointers = [];
     if (!opt.noCam && opt.control !== "touch"){
@@ -457,7 +460,7 @@ window.Arena = (() => {
   }
 
   function onDown(e){
-    if (e.target.closest("button, .pad")) return;
+    if (paused || e.target.closest("button, .pad, .pause-ov")) return;
     const s = opt.control === "shoot";
     touch[e.pointerId] = { id:"T" + e.pointerId, x:e.clientX, y:e.clientY, pinching:!s, shot:s };
   }
@@ -466,6 +469,9 @@ window.Arena = (() => {
 
   async function start(options){
     opt = options; alive = true; touch = {}; Sfx.enabled = opt.sound !== false;
+    paused = false; $("#pauseOv").hidden = true;
+    $("#arenaPause").onclick = togglePause; $("#btnResume").onclick = () => setPaused(false);
+    $("#btnPauseMenu").onclick = () => { setPaused(false); stop(); opt.onExit(); };
     $("#boards").innerHTML = ""; boards = []; ghost = null;
     const a = $("#arena");
     a.addEventListener("pointerdown", onDown); a.addEventListener("pointermove", onMove);
@@ -531,6 +537,22 @@ window.Arena = (() => {
     loop();
   }
 
+  function setPaused(v){
+    if (!alive || $("#arenaMsg").hidden === false) v = false;
+    paused = v;
+    $("#pauseOv").hidden = !v;
+    $("#arenaPause use").setAttribute("href", v ? "#i-play" : "#i-pause");
+    $("#arenaPause").setAttribute("aria-label", v ? "Lanjutkan" : "Jeda");
+    $("#pauseNote").textContent = opt?.online ? "Permainanmu dijeda. Lawan tetap bisa bermain, jadi jangan terlalu lama." : "Permainan dihentikan sementara. Waktu tidak berjalan.";
+    if (v){ audio.pause(); try { speechSynthesis.cancel(); } catch(e){} if (Voice.active) Voice.hold(true); touch = {}; }
+    else if (voiceMode() && Voice.active) Voice.hold(false);
+  }
+  const togglePause = () => setPaused(!paused);
+  addEventListener("keydown", e => {
+    if (!alive || !$("#arena").classList.contains("active")) return;
+    if (e.key === "p" || e.key === "P" || (e.key === "Escape" && paused)) togglePause();
+  });
+
   let pendingOpp = null;
   function setOpponent(p){
     if (!ghost){ pendingOpp = p; return; }
@@ -540,7 +562,7 @@ window.Arena = (() => {
   }
 
   function stop(){
-    alive = false; cancelAnimationFrame(raf); audio.pause(); Gesture.stop(); Voice.stop(); pendingOpp = null;
+    alive = false; paused = false; $("#pauseOv").hidden = true; cancelAnimationFrame(raf); audio.pause(); Gesture.stop(); Voice.stop(); pendingOpp = null;
     boards.forEach(b => b.destroy()); ghost?.destroy(); boards = []; ghost = null;
     removeEventListener("resize", resize);
     const a = $("#arena");
@@ -548,5 +570,5 @@ window.Arena = (() => {
     a.removeEventListener("pointerup", onUp); a.removeEventListener("pointercancel", onUp);
   }
 
-  return { start, stop, setOpponent };
+  return { start, stop, setOpponent, pause:setPaused };
 })();

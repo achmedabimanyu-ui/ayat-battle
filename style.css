@@ -492,3 +492,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:4px solid 
 .pad-guide{font-family:"Noto Naskh Arabic",var(--font-ar);line-height:1;padding-bottom:.12em}
 /* tombol Dengar menyala saat suara papan ini sedang diputar */
 .listen.playing{background:var(--moss);animation:pulse 1s ease-in-out infinite}
+
+/* TOMBOL JEDA */
+.arena-pause{position:absolute;left:70px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:9}
+.bhud{padding-left:130px}
+.barea + .barea .bhud{padding-left:10px}
+.pause-ov{position:absolute;inset:0;z-index:12;display:grid;place-items:center;padding:20px;background:rgba(40,20,5,.6);backdrop-filter:blur(4px);animation:fadeIn .2s}
+.pause-ov[hidden]{display:none}
+.pause-note{text-align:center;margin:4px 0 14px;line-height:1.5}
+#arena.active:has(.pause-ov:not([hidden])) .card{animation-play-state:paused}
