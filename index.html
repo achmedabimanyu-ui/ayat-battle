@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ayat Battle</title>
+<meta name="description" content="Game hafalan surat pendek untuk santri TPQ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Baloo+2:wght@500;700&family=Amiri+Quran&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="scene" aria-hidden="true">
+  <svg class="bg" viewBox="0 0 400 700" preserveAspectRatio="xMidYMax slice">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#7cc6e0"/><stop offset=".6" stop-color="#cfe9e6"/><stop offset="1" stop-color="#fbe2b0"/>
+      </linearGradient>
+    </defs>
+    <rect width="400" height="700" fill="url(#sky)"/>
+    <g class="cloud c1" fill="#fff" opacity=".85"><ellipse cx="70" cy="110" rx="46" ry="16"/><ellipse cx="95" cy="98" rx="28" ry="18"/></g>
+    <g class="cloud c2" fill="#fff" opacity=".7"><ellipse cx="310" cy="170" rx="52" ry="15"/><ellipse cx="285" cy="158" rx="26" ry="16"/></g>
+    <path d="M0 520 Q60 470 130 500 T260 490 T400 470 V700 H0Z" fill="#e9c48a"/>
+    <g fill="#d6a868"><rect x="250" y="430" width="70" height="70"/><path d="M285 380 a34 34 0 0 1 34 50 h-68 a34 34 0 0 1 34 -50z"/><rect x="232" y="400" width="10" height="100"/><rect x="328" y="400" width="10" height="100"/><path d="M237 388 l5 12 h-10z M333 388 l5 12 h-10z"/></g>
+    <path d="M0 560 Q90 520 190 555 T400 540 V700 H0Z" fill="#d9a35f"/>
+    <path d="M0 610 Q120 580 230 612 T400 600 V700 H0Z" fill="#c4873f"/>
+  </svg>
+</div>
+
+<main id="app">
+  <!-- HOME -->
+  <section class="screen active" id="home">
+    <h1 class="logo">
+      <span class="logo-top">Ayat</span>
+      <span class="logo-bottom">Battle</span>
+    </h1>
+    <p class="tagline">Adu hafalan surat pendek</p>
+    <nav class="menu">
+      <button class="plank wood" data-go="setup" data-play="solo">Main sendiri</button>
+      <button class="plank red" data-go="setup" data-play="duel-local">Duel satu layar</button>
+      <button class="plank moss" data-go="setup" data-play="duel-online">Duel online</button>
+      <button class="plank stone" data-go="howto">Cara main</button>
+    </nav>
+    <div class="round-row">
+      <button class="round" data-open="settings" aria-label="Pengaturan"><svg viewBox="0 0 24 24"><use href="#i-gear"/></svg></button>
+      <button class="round" id="btnSound" aria-label="Suara"><svg viewBox="0 0 24 24"><use href="#i-sound"/></svg></button>
+      <button class="round" data-go="howto" aria-label="Bantuan"><svg viewBox="0 0 24 24"><use href="#i-help"/></svg></button>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section class="screen" id="setup">
+    <header class="bar">
+      <button class="round sm" data-go="home" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <h2 class="board" id="setupTitle">Main sendiri</h2>
+      <span class="spacer"></span>
+    </header>
+
+    <div class="panel">
+      <h3 class="step">1. Pilih surat</h3>
+      <div class="chips">
+        <button class="chip" id="pickAll">Pilih semua</button>
+        <button class="chip" id="pickNone">Kosongkan</button>
+        <span class="count" id="pickCount">0 surat dipilih</span>
+      </div>
+      <div class="surah-grid" id="surahGrid"></div>
+    </div>
+
+    <div class="panel">
+      <h3 class="step">2. Pilih permainan</h3>
+      <div class="options" id="modeOpts"></div>
+    </div>
+
+    <div class="panel">
+      <h3 class="step">3. Pilih cara main</h3>
+      <div class="options" id="ctrlOpts"></div>
+    </div>
+
+    <div class="start-wrap">
+      <button class="plank wood big" id="btnStart">Mulai</button>
+      <p class="hint" id="startHint"></p>
+    </div>
+  </section>
+
+  <!-- HOWTO -->
+  <section class="screen" id="howto">
+    <header class="bar">
+      <button class="round sm" data-go="home" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <h2 class="board">Cara main</h2>
+      <span class="spacer"></span>
+    </header>
+    <div class="panel prose">
+      <h3>Permainan</h3>
+      <p><b>Susun ayat</b>: potongan ayat diacak. Susun sesuai urutan bacaan.</p>
+      <p><b>Sambung ayat</b>: dengarkan awal ayat, lalu pilih lanjutannya.</p>
+      <p><b>Lanjutkan ayat</b>: dengarkan satu ayat, lalu pilih ayat sesudahnya.</p>
+      <h3>Cara main</h3>
+      <p><b>Jepit</b>: rapatkan telunjuk dan jempol untuk mengambil kartu, buka jari untuk melepas.</p>
+      <p><b>Tembak</b>: arahkan telunjuk ke kartu, tekuk jempol untuk menembak.</p>
+      <p><b>Sentuh</b>: ketuk atau klik kartu, tanpa kamera.</p>
+      <h3>Poin</h3>
+      <p>Jawaban benar dapat 10 poin, ditambah bonus kalau cepat dan beruntun. Salah tidak mengurangi poin, jadi coba terus.</p>
+    </div>
+  </section>
+
+  <!-- PLACEHOLDER GAME -->
+  <section class="screen" id="game">
+    <header class="bar">
+      <button class="round sm" data-go="setup" aria-label="Kembali"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+      <h2 class="board">Siap main</h2>
+      <span class="spacer"></span>
+    </header>
+    <div class="panel prose" id="gameSummary"></div>
+  </section>
+</main>
+
+<!-- SETTINGS MODAL -->
+<div class="modal" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
+  <div class="modal-card">
+    <h2 class="board" id="setTitle">Pengaturan</h2>
+    <label class="field">Nama pemain
+      <input id="setName" maxlength="14" placeholder="Contoh: Aisyah">
+    </label>
+    <label class="field">Suara qari
+      <select id="setQari"></select>
+    </label>
+    <label class="field">Waktu per soal
+      <select id="setTime">
+        <option value="0">Tanpa batas</option>
+        <option value="20">20 detik</option>
+        <option value="30">30 detik</option>
+        <option value="45">45 detik</option>
+      </select>
+    </label>
+    <label class="field">Jumlah soal
+      <select id="setRounds">
+        <option>5</option><option>10</option><option>15</option>
+      </select>
+    </label>
+    <div class="modal-actions">
+      <button class="round" data-close aria-label="Tutup"><svg viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
+      <button class="round" id="saveSettings" aria-label="Simpan"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- ICONS -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-gear" viewBox="0 0 24 24"><path fill="currentColor" d="M10.3 2h3.4l.5 2.6c.6.2 1.2.5 1.7.9l2.5-.9 1.7 2.9-2 1.7c.1.6.1 1.2 0 1.8l2 1.7-1.7 2.9-2.5-.9c-.5.4-1.1.7-1.7.9l-.5 2.6h-3.4l-.5-2.6c-.6-.2-1.2-.5-1.7-.9l-2.5.9-1.7-2.9 2-1.7a6 6 0 0 1 0-1.8l-2-1.7 1.7-2.9 2.5.9c.5-.4 1.1-.7 1.7-.9zM12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8z" transform="translate(0 1.4)"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path fill="currentColor" d="M3 9h4l5-4v14l-5-4H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path fill="currentColor" d="M3 9h4l5-4v14l-5-4H3z"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><path d="M8.5 9a3.5 3.5 0 1 1 5 3.2c-1 .5-1.5 1.2-1.5 2.3V15" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="round"/><circle cx="12" cy="19.3" r="1.7" fill="currentColor"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5l-7 7 7 7" stroke="currentColor" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pinch" viewBox="0 0 48 48"><path d="M18 30V14a3 3 0 0 1 6 0v10M24 22V10a3 3 0 0 1 6 0v14M30 22v-4a3 3 0 0 1 6 0v12c0 7-5 12-12 12h-2c-5 0-8-3-10-7l-4-7a3 3 0 0 1 5-3l3 4" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-aim" viewBox="0 0 48 48"><circle cx="24" cy="24" r="13" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="24" cy="24" r="3.5" fill="currentColor"/><path d="M24 4v9M24 35v9M4 24h9M35 24h9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="i-tap" viewBox="0 0 48 48"><path d="M20 26V10a3 3 0 0 1 6 0v12l8 2c3 .8 4.5 3 4 6l-1.5 8c-.5 3-3 5-6 5h-6c-2.5 0-4.5-1-6-3l-6-8a3 3 0 0 1 4.5-4z" stroke="currentColor" stroke-width="3" fill="none" stroke-linejoin="round"/><path d="M14 12a9 9 0 0 1 18 0" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="i-build" viewBox="0 0 48 48"><rect x="6" y="30" width="16" height="10" rx="2" fill="currentColor"/><rect x="26" y="30" width="16" height="10" rx="2" fill="currentColor"/><rect x="16" y="17" width="16" height="10" rx="2" fill="currentColor"/><rect x="16" y="4" width="16" height="10" rx="2" fill="currentColor" opacity=".45"/></symbol>
+  <symbol id="i-link" viewBox="0 0 48 48"><rect x="4" y="16" width="18" height="16" rx="3" fill="currentColor"/><rect x="26" y="16" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="4 3"/><path d="M19 24h12" stroke="currentColor" stroke-width="3"/></symbol>
+  <symbol id="i-next" viewBox="0 0 48 48"><rect x="4" y="8" width="40" height="12" rx="3" fill="currentColor"/><path d="M24 24v8m-5-4 5 5 5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="4" y="36" width="40" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="4 3"/></symbol>
+</svg>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
