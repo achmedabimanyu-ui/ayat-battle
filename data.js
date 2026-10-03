@@ -132,7 +132,9 @@ window.MATERI = [
   { id:"huruf",   icon:"i-hij",   name:"Huruf satuan",  desc:"Kenali bentuk dan nama huruf" },
   { id:"sambung", icon:"i-link",  name:"Huruf sambung", desc:"Huruf di awal, tengah, akhir kata" },
   { id:"harakat", icon:"i-quiz",  name:"Berharakat",    desc:"Fathah, kasrah, dhammah, tanwin" },
-  { id:"kata",    icon:"i-build", name:"Kata Al-Qur'an",desc:"Dengar dan baca kata dari Al-Qur'an" }
+  { id:"kata",    icon:"i-build", name:"Kata Al-Qur'an",desc:"Dengar dan baca kata dari Al-Qur'an" },
+  { id:"pecah",   icon:"i-link",  name:"Pecah & rangkai", desc:"Kata dipecah jadi huruf, huruf dirangkai jadi kata" },
+  { id:"pasang",  icon:"i-mic",   name:"Pasang harakat", desc:"Dengarkan, lalu pasang harakatnya" }
 ];
 window.TAHAP = [
   { id:1, name:"Tahap 1: harakat (fathah, kasrah, dhammah)" },

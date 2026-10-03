@@ -177,6 +177,13 @@ window.Hijaiyah = (() => {
       return qs;
     }
 
+    // ---- pecah & rangkai ----
+    if (o.materi === "pecah" || o.materi === "pasang"){
+      const words = await loadWords(o.pick);
+      if (o.materi === "pecah") return buildPecah(words, level, rounds, n);
+      return buildPasang(words, level, rounds, n);
+    }
+
     // ---- kata Al-Qur'an ----
     const words = await loadWords(o.pick);
     const tahap = +o.tahap || 1;
@@ -210,6 +217,95 @@ window.Hijaiyah = (() => {
       if (w.audio) return { label:"Dengarkan, lalu pilih kata yang dibaca", prompt:"Tekan Dengar untuk mengulang", slots:[w.t],
                             cards:shuffle([w.t, ...wrong]), cardClass:"word", playStart:{ url:w.audio }, playEnd:{ url:w.audio }, hint:{ url:w.audio }, reveal };
       return { label:"Cari kata yang sama", prompt:w.t, promptClass:"big-ar", slots:[w.t], cards:shuffle([w.t, ...wrong]), cardClass:"word", reveal };
+    });
+  }
+
+  // ---------- huruf dari kata (tanpa harakat) ----------
+  const bare = w => w.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640\u08F0-\u08F2]/g, "").replace(/\u0671/g, "\u0627");
+  const ISO = { "أ":"ا", "إ":"ا", "آ":"ا", "ؤ":"و", "ئ":"ي", "ى":"ي" };
+  const splitLetters = w => [...bare(w)].filter(c => /[\u0621-\u064A]/.test(c));
+
+  function buildPecah(words, level, rounds, n){
+    const [lo, hi] = { easy:[2, 3], medium:[3, 4], hard:[3, 5] }[level];
+    const seen = new Set(), items = [];
+    for (const w of words){
+      const b = bare(w[0]), ls = splitLetters(w[0]);
+      if (ls.length < lo || ls.length > hi || seen.has(b) || b.includes(" ")) continue;
+      seen.add(b); items.push({ b, ls, audio:audioOf(w[1]), key:w[3] });
+    }
+    if (items.length < 2) return [];
+    const order = []; while (order.length < rounds) order.push(...shuffle(items)); order.length = rounds;
+    return order.map((it, i) => {
+      const iso = it.ls.map(c => ISO[c] || c);
+      if (i % 2 === 0){
+        let cards = iso.slice();
+        if (level !== "easy"){
+          const t = twinsOf(pick(iso))[0] || pick(HIJAIYAH).ch;          // kartu jebakan beda titik
+          if (!iso.includes(t)) cards.push(t);
+        }
+        return { label:"Pecah kata ini menjadi huruf satuan", prompt:it.b, promptClass:"big-hij", slots:iso,
+                 cards:shuffle(cards), cardClass:"letter", playEnd:it.audio ? { url:it.audio } : null, reveal:`QS ${it.key}` };
+      }
+      // rangkai: huruf terpisah -> pilih kata yang benar
+      const wrong = new Set();
+      for (let k = 0; k < 30 && wrong.size < n - 1; k++){
+        const ls = it.ls.slice();
+        if (level === "hard" && Math.random() < .5){
+          const j = Math.random() * ls.length | 0, tw = twinsOf(ISO[ls[j]] || ls[j]);
+          if (tw.length) ls[j] = pick(tw);
+        } else {
+          const j = Math.random() * (ls.length - 1) | 0; [ls[j], ls[j + 1]] = [ls[j + 1], ls[j]];
+        }
+        const cand = ls.join("");
+        if (cand !== it.b) wrong.add(cand);
+      }
+      return { label:"Rangkai huruf ini menjadi kata", prompt:iso.join("  "), promptClass:"big-hij", slots:[it.b],
+               cards:shuffle([it.b, ...wrong]), cardClass:"word-hij", playEnd:it.audio ? { url:it.audio } : null, reveal:`QS ${it.key}` };
+    });
+  }
+
+  // ---------- pasang harakat ----------
+  const BASIC = { "\u064E":"a", "\u0650":"i", "\u064F":"u" };
+  const CARD = m => "\u25CC" + m;
+  function pairs(w){
+    const out = [], chars = [...w];
+    for (let i = 0; i < chars.length; i++){
+      if (!/[\u0621-\u064A]/.test(chars[i])) continue;
+      let marks = ""; let j = i + 1;
+      while (j < chars.length && !/[\u0621-\u064A\u0671]/.test(chars[j])) marks += chars[j++];
+      const m = [...marks].find(c => BASIC[c]);
+      if (!m) return null;
+      out.push({ l:chars[i], m });
+    }
+    return out;
+  }
+  function buildPasang(words, level, rounds, n){
+    const max = { easy:2, medium:3, hard:4 }[level];
+    const items = [];
+    // huruf satuan berharakat dari rekaman guru (kalau ada)
+    if (level === "easy") HIJAIYAH.forEach(h => ["a", "i", "u"].forEach(v => {
+      const k = sid(h, v); if (h.ch !== "ء" && window.Rec && Rec.has(k)) items.push({ ps:[{ l:h.ch, m:MARK[v] }], snd:{ rec:k }, key:null });
+    }));
+    const seen = new Set();
+    for (const w of words){
+      if (!w[1] || tahapOf(w[0]) !== 1) continue;
+      const ps = pairs(w[0]);
+      if (!ps || ps.length < 2 || ps.length > max) continue;
+      const b = bare(w[0]); if (seen.has(b)) continue; seen.add(b);
+      items.push({ ps, snd:{ url:audioOf(w[1]) }, key:w[3] });
+    }
+    if (!items.length) return [];
+    const order = []; while (order.length < rounds) order.push(...shuffle(items)); order.length = rounds;
+    return order.map(it => {
+      const marks = it.ps.map(p => p.m);
+      const cards = marks.map(CARD);
+      const extra = { easy:0, medium:1, hard:2 }[level];
+      const others = shuffle(Object.keys(BASIC));
+      for (let k = 0; k < extra; k++) cards.push(CARD(others[k % 3]));
+      return { label:"Dengarkan, lalu pasang harakatnya", prompt:it.ps.map(p => p.l).join(""), promptClass:"big-hij",
+               slots:marks.map(CARD), slotLabels:it.ps.map(p => p.l), slotFills:it.ps.map(p => p.l + p.m),
+               cards:shuffle(cards), cardClass:"mark", playStart:it.snd, hint:it.snd, playEnd:it.snd,
+               reveal: it.key ? `QS ${it.key}` : "" };
     });
   }
 

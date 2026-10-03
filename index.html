@@ -155,6 +155,11 @@
       <p class="field-note" id="recHint" style="margin-top:10px">Suara huruf dan harakat memakai rekaman ustadz/ustadzah. <a href="#" id="recHintLink">Rekam di Studio suara</a>.</p>
     </div>
 
+    <div class="panel" id="duelPanel" hidden>
+      <h3 class="step">Soal duel</h3>
+      <div class="options" id="duelOpts"></div>
+    </div>
+
     <div class="panel">
       <h3 class="step">3. Pilih cara main</h3>
       <div class="options" id="ctrlOpts"></div>
@@ -220,6 +225,20 @@
       <div class="surah-grid rec-grid" id="recGrid"></div>
       <p class="count" id="recCount"></p>
     </div>
+    <div class="panel" id="cutPanel">
+      <h3 class="step">Potong dari satu file</h3>
+      <p class="lobby-note">Punya satu rekaman panjang yang dibaca berurutan (misalnya Alif, Ba, Ta, sampai Ya, dengan jeda di antara setiap bacaan)? Masukkan filenya di sini. Potongan dipasangkan mulai dari huruf yang sedang dipilih di atas, sesuai tab dan harakatnya.</p>
+      <div class="chips">
+        <label class="plank wood cut-file">Pilih file audio<input type="file" id="cutFile" accept="audio/*,.mp3,.m4a,.wav,.ogg,.webm" hidden></label>
+        <label class="cut-sens">Kepekaan <input type="range" id="cutSens" min="0" max="1" step=".05" value=".5"></label>
+        <label class="cut-sens">Jeda minimal <select id="cutGap"><option value="150">pendek</option><option value="250" selected>sedang</option><option value="450">panjang</option></select></label>
+      </div>
+      <p class="rec-status" id="cutStatus"></p>
+      <canvas class="cut-wave" id="cutWave" height="90" hidden></canvas>
+      <div class="cut-list" id="cutList"></div>
+      <div class="start-wrap" id="cutSaveWrap" hidden><button class="plank moss" id="cutSave">Simpan semua potongan</button></div>
+    </div>
+
     <div class="panel prose">
       <h3>Supaya terdengar di semua perangkat</h3>
       <p>Rekaman tersimpan di perangkat ini dan langsung dipakai di game. Agar perangkat lain ikut mendengar, tekan tombol di bawah untuk mengunduh folder <b>audio</b>, ekstrak, lalu unggah folder itu ke repository GitHub (Add file, Upload files, seret folder audio).</p>
@@ -308,6 +327,9 @@
       </select>
       <small class="field-note" id="levelNote"></small>
     </label>
+    <label class="field">Suara latar di menu
+      <select id="setBgm"><option value="1">Nyala (angin dan kicau burung)</option><option value="0">Mati</option></select>
+    </label>
     <label class="field">Suara qari
       <select id="setQari"></select>
     </label>
@@ -362,6 +384,7 @@
 <script src="gesture.js"></script>
 <script src="quran.js"></script>
 <script src="questions.js"></script>
+<script src="bgm.js"></script>
 <script src="voice.js"></script>
 <script src="sfx.js"></script>
 <script src="rec.js"></script>

@@ -3,7 +3,7 @@
   const $$ = s => [...document.querySelectorAll(s)];
 
   // ---------- STATE (tersimpan di browser) ----------
-  const defaults = { name:"", qari:"Husary_128kbps", time:"30", rounds:"10", sound:true, level:"easy", materi:"huruf", tahap:1,
+  const defaults = { name:"", qari:"Husary_128kbps", time:"30", rounds:"10", sound:true, level:"easy", materi:"huruf", tahap:1, bgm:"1", duelQ:"diff",
                      surahs:[112,113,114], mode:"susun", control:"touch", play:"solo" };
   let S = { ...defaults };
   try { S = { ...defaults, ...JSON.parse(localStorage.getItem("ayatBattle") || "{}") }; } catch(e){}
@@ -29,10 +29,15 @@
     $("#btnSound use").setAttribute("href", S.sound ? "#i-sound" : "#i-mute");
     $("#btnSound").setAttribute("aria-label", S.sound ? "Matikan suara" : "Nyalakan suara");
   }
-  $("#btnSound").onclick = () => { S.sound = !S.sound; save(); renderSoundBtn(); };
+  $("#btnSound").onclick = () => { S.sound = !S.sound; save(); renderSoundBtn(); bgmSync(); };
 
   // ---------- NAVIGATION ----------
+  const bgmOK = () => S.sound && S.bgm === "1";
+  let current = "home";
+  function bgmSync(){ if (bgmOK() && current !== "arena") Bgm.start(); else Bgm.stop(); }
+  document.addEventListener("pointerdown", () => bgmSync(), { once:true });
   function go(id){
+    current = id; bgmSync();
     $$(".screen").forEach(s => s.classList.toggle("active", s.id === id));
     window.scrollTo(0,0);
   }
@@ -103,16 +108,21 @@
   }
   optionGroup($("#modeOpts"), MODES, "mode");
   optionGroup($("#materiOpts"), MATERI, "materi");
+  optionGroup($("#duelOpts"), [
+    { id:"diff", icon:"i-quiz", name:"Soal berbeda", desc:"Diacak untuk tiap pemain, tidak bisa mencontek" },
+    { id:"same", icon:"i-link", name:"Soal sama", desc:"Kedua pemain mendapat soal yang sama" }
+  ], "duelQ");
   $("#tahapSel").innerHTML = TAHAP.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
   $("#tahapSel").value = S.tahap;
   $("#tahapSel").onchange = e => { S.tahap = +e.target.value; save(); };
-  const hijNoPick = () => S.mode === "hijaiyah" && S.materi !== "kata";
+  const hijNoPick = () => S.mode === "hijaiyah" && ["huruf", "sambung", "harakat"].includes(S.materi);
   optionGroup($("#ctrlOpts"), CONTROLS, "control");
 
   // ---------- VALIDATION ----------
   function validate(){
     let msg = "";
     $("#hijPanel").hidden = S.mode !== "hijaiyah";
+    $("#duelPanel").hidden = S.play === "solo";
     $("#tahapField").hidden = S.materi !== "kata";
     if (!hijNoPick() && !pick().list.length) msg = S.pickBy === "juz" ? "Pilih minimal satu juz." : "Pilih minimal satu surat.";
     else if (S.control === "write" && !(S.mode === "hijaiyah" && ["huruf", "sambung"].includes(S.materi))) msg = "Cara main Tulis untuk Hijaiyah: huruf satuan atau huruf sambung.";
@@ -125,7 +135,7 @@
 
   const gameOpts = () => ({
     control:S.control, play:S.play, name:S.name, mode:S.mode, qari:S.qari, sound:S.sound,
-    time:S.time, rounds:S.rounds, pick:pick(), level:S.level, materi:S.materi, tahap:S.tahap,
+    time:S.time, rounds:S.rounds, pick:pick(), level:S.level, materi:S.materi, tahap:S.tahap, diffQ:S.duelQ === "diff",
     names:Object.fromEntries(SURAHS.map(s => [s.no, s.name])),
     onExit:() => go("home")
   });
@@ -195,7 +205,8 @@
       await Rec.init();
       const questions = await Questions.make(o);
       if (!questions.length) throw new Error();
-      const payload = { questions, mode:o.mode, time:o.time, startAt:Date.now() + 3500 };
+      const questions2 = o.diffQ ? await Questions.make(o) : null;
+      const payload = { questions, questions2, mode:o.mode, materi:o.materi, level:o.level, time:o.time, startAt:Date.now() + 3500 };
       await Online.start(payload);
       beginDuel(payload);
     } catch(e){ $("#roomNote").textContent = "Soal gagal disiapkan. Periksa internet atau pilihan surat."; }
@@ -208,7 +219,9 @@
       n--; if (n > 0){ cd.textContent = n; tick(); }
       else {
         clearInterval(t); cd.hidden = true; inGame = true; go("arena");
-        Arena.start({ ...gameOpts(), play:"duel-online", mode:p.mode, time:p.time, questions:p.questions,
+        const host = Online.role === "host", other = p.questions2 || p.questions;
+        Arena.start({ ...gameOpts(), play:"duel-online", mode:p.mode, materi:p.materi || gameOpts().materi, level:p.level || gameOpts().level, time:p.time,
+          questions: host ? p.questions : other, questionsOpp: host ? other : p.questions,
           online:true, oppName, onProgress:x => Online.progress(x),
           onExit:() => { inGame = false; Online.leave(); go("home"); } });
       }
@@ -281,6 +294,74 @@
     try { await Rec.exportZip(); } catch(e){ alert("Gagal membuat file. Periksa internet lalu coba lagi."); }
     $("#recExport").disabled = false; $("#recExport").textContent = "Unduh folder audio";
   };
+  // ---- potong audio ----
+  const CUT = { buf:null, segs:[] };
+  const cutAudio = new Audio();
+  function playSeg(seg){
+    if (!CUT.buf) return;
+    cutAudio.src = URL.createObjectURL(Rec.clip(CUT.buf, seg)); cutAudio.play().catch(() => {});
+  }
+  function analyze(){
+    if (!CUT.buf) return;
+    CUT.segs = Rec.segments(CUT.buf, { sens:+$("#cutSens").value, minGap:+$("#cutGap").value });
+    renderCut();
+  }
+  function renderCut(){
+    const items = stItems(), start = ST.i;
+    const need = items.length - start;
+    $("#cutStatus").textContent = CUT.segs.length
+      ? `Ditemukan ${CUT.segs.length} potongan. Dibutuhkan ${need} untuk ${ST.tab === "huruf" ? "huruf" : "harakat ini"} mulai dari ${stShow(items[start]).lat}.` +
+        (CUT.segs.length > need ? " Buang potongan yang bukan bacaan (misalnya salam pembuka)." : CUT.segs.length < need ? " Kalau ada bacaan yang menyatu, naikkan kepekaan atau pilih jeda pendek." : " Jumlahnya pas.")
+      : "Tidak ada potongan yang terdeteksi. Coba naikkan kepekaan.";
+    // gelombang + tanda potongan
+    const cv = $("#cutWave"); cv.hidden = false;
+    const w = cv.width = cv.clientWidth * (devicePixelRatio || 1), h = cv.height, g = cv.getContext("2d");
+    const d = CUT.buf.getChannelData(0), step = Math.max(1, Math.floor(d.length / w));
+    g.clearRect(0, 0, w, h);
+    CUT.segs.forEach((sg, i) => {
+      g.fillStyle = i % 2 ? "rgba(169,184,74,.45)" : "rgba(246,198,74,.5)";
+      g.fillRect(sg.start / CUT.buf.duration * w, 0, (sg.end - sg.start) / CUT.buf.duration * w, h);
+    });
+    g.fillStyle = "#4a2a12";
+    for (let x = 0; x < w; x++){ let m = 0; for (let j = 0; j < step; j++) m = Math.max(m, Math.abs(d[x * step + j] || 0)); g.fillRect(x, h / 2 - m * h / 2, 1, Math.max(1, m * h)); }
+    $("#cutList").innerHTML = CUT.segs.map((sg, i) => {
+      const it = items[start + i];
+      return `<div class="cut-row${it ? "" : " extra"}"><b class="cut-to" dir="rtl">${it ? stShow(it).big : "-"}</b>
+        <span>${it ? stShow(it).lat : "tidak dipakai"} <small>${sg.start.toFixed(1)} - ${sg.end.toFixed(1)} dtk</small></span>
+        <button class="chip" data-a="play" data-i="${i}">Putar</button>
+        <button class="chip" data-a="drop" data-i="${i}">Buang</button>
+        ${i < CUT.segs.length - 1 ? `<button class="chip" data-a="merge" data-i="${i}">Gabung</button>` : ""}</div>`;
+    }).join("");
+    $("#cutSaveWrap").hidden = !CUT.segs.length;
+  }
+  $("#cutFile").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    $("#cutStatus").textContent = "Membaca file...";
+    try { CUT.buf = await Rec.decode(f); analyze(); }
+    catch(err){ $("#cutStatus").textContent = "File tidak bisa dibaca. Gunakan MP3, M4A, WAV, atau OGG."; }
+    e.target.value = "";
+  };
+  $("#cutSens").oninput = analyze; $("#cutGap").onchange = analyze;
+  $("#cutList").onclick = e => {
+    const b = e.target.closest("[data-a]"); if (!b) return;
+    const i = +b.dataset.i;
+    if (b.dataset.a === "play") playSeg(CUT.segs[i]);
+    if (b.dataset.a === "drop"){ CUT.segs.splice(i, 1); renderCut(); }
+    if (b.dataset.a === "merge"){ CUT.segs[i].end = CUT.segs[i + 1].end; CUT.segs.splice(i + 1, 1); renderCut(); }
+  };
+  $("#cutSave").onclick = async () => {
+    const items = stItems(); let n = 0;
+    for (let i = 0; i < CUT.segs.length && ST.i + i < items.length; i++){
+      await Rec.save(stKey(items[ST.i + i]), Rec.clip(CUT.buf, CUT.segs[i])); n++;
+    }
+    $("#cutStatus").textContent = `${n} potongan tersimpan. Dengarkan beberapa di daftar huruf di atas untuk memastikan.`;
+    CUT.buf = null; CUT.segs = []; $("#cutList").innerHTML = ""; $("#cutWave").hidden = true; $("#cutSaveWrap").hidden = true;
+    renderStudio();
+  };
+  // daftar ikut berubah kalau huruf awal / tab diganti
+  const _rs = renderStudio;
+  renderStudio = function(){ _rs(); if (CUT.buf) renderCut(); };
+
   $("#openStudio").onclick = () => { $("#settings").hidden = true; openStudio(); };
   $("#recHintLink").onclick = e => { e.preventDefault(); openStudio(); };
   // hentikan mikrofon saat keluar dari studio
@@ -292,7 +373,7 @@
   $$("[data-open='settings']").forEach(b => b.onclick = () => {
     $("#setName").value = S.name; $("#setQari").value = S.qari;
     $("#setTime").value = S.time; $("#setRounds").value = S.rounds;
-    $("#setLevel").value = S.level; levelNote();
+    $("#setLevel").value = S.level; levelNote(); $("#setBgm").value = S.bgm;
     modal.hidden = false; $("#setName").focus();
   });
   const close = () => { modal.hidden = true; };
@@ -303,7 +384,7 @@
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) close(); });
   $("#saveSettings").onclick = () => {
     S.name = $("#setName").value.trim(); S.qari = $("#setQari").value;
-    S.time = $("#setTime").value; S.rounds = $("#setRounds").value; S.level = $("#setLevel").value;
+    S.time = $("#setTime").value; S.rounds = $("#setRounds").value; S.level = $("#setLevel").value; S.bgm = $("#setBgm").value; bgmSync();
     save(); close();
   };
 

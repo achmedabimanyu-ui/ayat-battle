@@ -41,7 +41,7 @@ window.Arena = (() => {
   // =================== PAPAN ===================
   class Board {
     constructor({ id, name, color, ghost = false }){
-      Object.assign(this, { id, name, color, ghost, qi:-1, score:0, streak:0, finished:false, busy:true,
+      Object.assign(this, { id, name, color, ghost, qs, qi:-1, score:0, streak:0, finished:false, busy:true,
                             cards:[], slots:[], dwell:{}, timeLeft:0, timer:0 });
       this.root = el("div", "barea" + (id === "R" ? " p2" : "") + (ghost ? " ghost" : ""), $("#boards"));
       const hud = el("div", "bhud", this.root);
@@ -87,12 +87,12 @@ window.Arena = (() => {
     top(){ return this.stage.getBoundingClientRect().bottom + 8; }
     render(){
       this.hScore.textContent = this.score;
-      this.hQ.textContent = this.finished ? "Selesai" : `${Math.min(this.qi + 1, qs.length)}/${qs.length}`;
+      this.hQ.textContent = this.finished ? "Selesai" : `${Math.min(this.qi + 1, this.qs.length)}/${this.qs.length}`;
     }
 
     show(qi){
       clearInterval(this.timer); clearTimeout(this.advT);
-      this.qi = qi; this.q = qs[qi]; this.busy = false; this.dwell = {};
+      this.qi = qi; this.q = this.qs[qi]; this.busy = false; this.dwell = {};
       if (this.btnNext){ this.btnNext.textContent = "Lewati"; this.btnNext.classList.remove("ready"); }
       const q = this.q;
       this.layer.innerHTML = ""; this.slotWrap.innerHTML = "";
@@ -103,15 +103,17 @@ window.Arena = (() => {
       this.pText.dir = q.promptClass === "big-latin" ? "ltr" : "rtl";
       const single = q.slots.length === 1;
       this.slots = q.slots.map((t, i) => {
-        const e = el("div", "slot" + (single ? " wide" : ""), this.slotWrap, single ? (q.write ? "Tulis di papan" : voiceMode() ? "Baca dengan suara" : "Taruh jawaban di sini") : "");
+        const lbl = q.slotLabels?.[i];
+        const e = el("div", "slot" + (single && !lbl ? " wide" : "") + (lbl ? " labeled hij" : ""), this.slotWrap,
+          lbl || (single ? (q.write ? "Tulis di papan" : voiceMode() ? "Baca dengan suara" : "Taruh jawaban di sini") : ""));
         if (opt.control === "shoot" && i === 0 && !this.ghost) e.classList.add("next");
-        return { el:e, value:t, done:false };
+        return { el:e, value:t, done:false, fillText:q.slotFills?.[i] };
       });
       const top = this.top();
       this.cards = q.cards.map(t => {
         const lat = q.latin || q.cardClass === "latin";
         const e = el("div", "card" + (this.ghost ? " ghost-card" : "") + (lat ? " latin" : "") + (q.cardClass ? " " + q.cardClass : ""), this.layer, t);
-        e.style.fontSize = Math.round((lat ? 26 : q.cardClass === "letter" ? 52 : q.cardClass === "word" ? 40 : fontFor(t)) * this.scale) + "px";
+        e.style.fontSize = Math.round((lat ? 26 : q.cardClass === "letter" || q.cardClass === "mark" ? 52 : q.cardClass === "word-hij" ? 44 : q.cardClass === "word" ? 40 : fontFor(t)) * this.scale) + "px";
         if (voiceMode() && !q.latin && !this.ghost) e.hidden = true;   // mode suara: jawab dengan membaca
         const c = { el:e, value:t, held:null, done:false, w:e.offsetWidth, h:e.offsetHeight };
         c.x = 8 + Math.random() * Math.max(1, this.w - c.w - 16);
@@ -156,9 +158,9 @@ window.Arena = (() => {
     }
     fill(s){
       s.done = true; s.el.classList.add("ok"); s.el.classList.remove("next", "near");
-      s.el.textContent = s.value;
+      s.el.textContent = s.fillText || s.value;
       if (this.q?.latin || this.q?.cardClass === "latin"){ s.el.classList.add("latin"); s.el.style.fontSize = Math.round(24 * this.scale) + "px"; }
-      else if (this.q?.cardClass === "letter" || this.q?.write){ s.el.classList.add("hij"); s.el.style.fontSize = Math.round(44 * this.scale) + "px"; }
+      else if (["letter", "word-hij", "mark"].includes(this.q?.cardClass) || this.q?.write){ s.el.classList.add("hij"); s.el.style.fontSize = Math.round(44 * this.scale) + "px"; }
       else s.el.style.fontSize = Math.round(Math.min(30, fontFor(s.value)) * this.scale) + "px";
     }
     confetti(n = 36){
@@ -235,7 +237,7 @@ window.Arena = (() => {
     next(){
       if (!alive || this.finished) return;
       clearTimeout(this.advT);
-      if (this.qi + 1 >= qs.length){
+      if (this.qi + 1 >= this.qs.length){
         this.finished = true; this.busy = true; this.render();
         this.layer.innerHTML = ""; this.slotWrap.innerHTML = "";
         this.wait = el("div", "wait-note", this.root, "Selesai, menunggu lawan");
@@ -323,7 +325,7 @@ window.Arena = (() => {
         this.wait = el("div", "wait-note", this.root, `${this.name} selesai`);
       }
       this.score = sn.s ?? this.score;
-      if (!this.finished && sn.qi != null && sn.qi !== this.qi && qs[sn.qi]) this.show(sn.qi);
+      if (!this.finished && sn.qi != null && sn.qi !== this.qi && this.qs[sn.qi]) this.show(sn.qi);
       if (!this.finished){
         (sn.sl || []).forEach((d, i) => { const s = this.slots[i]; if (s && d && !s.done) this.fill(s); });
         (sn.c || []).forEach((v, i) => { const c = this.cards[i]; if (!c) return;
@@ -493,6 +495,9 @@ window.Arena = (() => {
       if (opt.questions) qs = opt.questions;
       else qs = await Questions.make(opt);
       if (!qs.length) throw Object.assign(new Error(), { name:"NO_Q" });
+      // duel dengan soal berbeda: papan kedua / lawan memakai daftar soal sendiri
+      var qs2 = opt.questionsOpp || null;
+      if (!qs2 && opt.play === "duel-local" && opt.diffQ){ qs2 = await Questions.make(opt); if (!qs2.length) qs2 = null; }
     } catch(e){
       msg("Ayat belum bisa dimuat", e.name === "NO_Q"
         ? "<p>Surat yang dipilih tidak cukup untuk permainan ini. Tambah surat lain atau ganti permainan.</p>"
@@ -525,9 +530,10 @@ window.Arena = (() => {
 
     if (local2()){
       boards = [new Board({ id:"L", name:"Pemain 1", color:COLORS.L }), new Board({ id:"R", name:"Pemain 2", color:COLORS.R })];
+      if (qs2) boards[1].qs = qs2;
     } else {
       boards = [new Board({ id:"L", name:opt.name || "Kamu", color:COLORS.L })];
-      if (opt.online) ghost = new Board({ id:"R", name:opt.oppName || "Lawan", color:COLORS.R, ghost:true });
+      if (opt.online){ ghost = new Board({ id:"R", name:opt.oppName || "Lawan", color:COLORS.R, ghost:true }); if (qs2) ghost.qs = qs2; }
     }
     resize();
     msg();
